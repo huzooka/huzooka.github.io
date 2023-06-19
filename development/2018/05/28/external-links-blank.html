@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>External Links with _blank Target | HuZooka</title>
+<meta name="generator" content="Jekyll v4.2.2">
+<meta property="og:title" content="External Links with _blank Target">
+<meta name="author" content="Zoltán Horváth">
+<meta property="og:locale" content="en_US">
+<meta name="description" content="How to open external links in new tab properly and safely.">
+<meta property="og:description" content="How to open external links in new tab properly and safely.">
+<link rel="canonical" href="https://huzooka.github.io/development/2018/05/28/external-links-blank.html">
+<meta property="og:url" content="https://huzooka.github.io/development/2018/05/28/external-links-blank.html">
+<meta property="og:site_name" content="HuZooka">
+<meta property="og:image" content="https://huzooka.github.io/simple.png">
+<meta property="og:type" content="article">
+<meta property="article:published_time" content="2018-05-28T18:14:39+00:00">
+<meta name="twitter:card" content="summary_large_image">
+<meta property="twitter:image" content="https://huzooka.github.io/simple.png">
+<meta property="twitter:title" content="External Links with _blank Target">
+<meta name="twitter:site" content="@huzooka">
+<meta name="twitter:creator" content="@huzooka">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Zoltán Horváth"},"dateModified":"2018-05-28T18:14:39+00:00","datePublished":"2018-05-28T18:14:39+00:00","description":"How to open external links in new tab properly and safely.","headline":"External Links with _blank Target","image":"https://huzooka.github.io/simple.png","mainEntityOfPage":{"@type":"WebPage","@id":"https://huzooka.github.io/development/2018/05/28/external-links-blank.html"},"url":"https://huzooka.github.io/development/2018/05/28/external-links-blank.html"}</script>
+
+<link rel="stylesheet" href="/assets/main.css?f3f2fc8c">
+<link type="application/atom+xml" rel="alternate" href="https://huzooka.github.io/feed.xml" title="HuZooka">
+<link rel="icon" href="/favicon.ico?b6c405af" type="image/vnd.microsoft.icon">
+    <link rel="preload" href="/assets/texb-875-125.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+    <link rel="preload" href="/assets/charissilr.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+    <link rel="preload" href="/assets/charissilb.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+</head>
+<body>
+<header class="site-header">
+
+    <div class="wrapper">
+<a class="site-title h3" rel="author" href="/">
+            <span class="logo logo--header"></span>HuZooka
+        </a><nav class="site-nav">
+            <input type="checkbox" id="nav-trigger" class="nav-trigger">
+            <label for="nav-trigger" class="menu-icon">
+                <span class="menu-icon__bar"></span>
+                <span class="menu-icon__bar"></span>
+                <span class="menu-icon__bar"></span>
+            </label>
+
+            <div class="trigger">
+<a class="nav-link h5" href="/about/">About</a><a class="nav-link h5" href="https://huzooka.github.io/tag/drupal">Drupal</a><a class="nav-link h5" href="https://huzooka.github.io/tag/migration">Migration</a>
+</div>
+        </nav>
+</div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+    <header class="post-header">
+        <h1 class="post-title p-name" itemprop="name headline">External Links with _blank Target</h1>
+
+        <p class="postmeta">
+            <time class="dt-published" datetime="2018-05-28T18:14:39+00:00" itemprop="datePublished">May 28, 2018
+            </time>• <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span class="p-author h-card" itemprop="name">Zoltán Horváth</span></span></p>
+    </header>
+
+    <div class="post-content e-content rhythm-onehalf" itemprop="articleBody">
+        <p class="lead">Most of the clients I work for what the external links on their website to open a new browser window or tab. This article is not about the debate whether outbound links should open a new tab or stay in the current one. All I want to do is share how to meet this frequent need <strong>properly</strong>.</p>
+
+<p>In the next articles in this series you will see some available options on how you can identify external links of a Drupal site, and even modify them to be opened in a new browser tab. But if you simply just add a <code class="language-plaintext highlighter-rouge">target="_blank"</code> to them, you put your site visitors at risk of tabnapping.</p>
+
+<h2 id="what">What?</h2>
+
+<p><a href="https://en.wikipedia.org/wiki/Tabnabbing" target="_blank" rel="noopener noreferrer">Tabnapping</a> is a phishing attack that takes advantage of user trust and inattention to detail in regard to tabs, and forces the browser to navigate to an impersonated page after the page has been left. Mathias Bynens created a <a href="https://mathiasbynens.github.io/rel-noopener/" target="_blank" rel="noopener noreferrer">great Github page</a> for demonstrating this attack.</p>
+
+<p>This is why Google Chrome’s built-in Lighthouse validation warns you when it finds an external link with a <code class="language-plaintext highlighter-rouge">_blank</code> target on the audited page:</p>
+
+<p class="figure"><a href="/files/image/Lighthouse-audit-unsafe-links.png" class="image-linker"><picture><source srcset="/files/image/Lighthouse-audit-unsafe-links.webp" type="image/webp" media="all"><img src="/files/image/Lighthouse-audit-unsafe-links.png" alt="Google Chrome Lighthouse audit reports unsafe links" width="1412" height="776" loading="lazy"></source></picture></a>
+Lighthouse audit report warning about unsafe cross-origin link destinations.</p>
+
+<h2 id="the-solution">The solution</h2>
+
+<p>The best thing is: this problem is really easy to solve. Whenever you have a <code class="language-plaintext highlighter-rouge">_blank</code> target on a cross-origin link, add <code class="language-plaintext highlighter-rouge">rel="noopener"</code> (or <code class="language-plaintext highlighter-rouge">rel="noreferrer"</code>) as well. It also worths a mention that by using <code class="language-plaintext highlighter-rouge">noopener</code> or <code class="language-plaintext highlighter-rouge">noreferrer</code> relation, you can take some performance benefits as well (these are described and demonstrated in an <a href="https://jakearchibald.com/2016/performance-benefits-of-rel-noopener/" target="_blank" rel="noopener noreferrer">article by Jake Archibald</a>).</p>
+
+<hr>
+
+<p class="sources"><em>Sources</em>:</p>
+
+<ul>
+  <li>
+<a href="https://developers.google.com/web/tools/lighthouse/audits/noopener" target="_blank" rel="noopener noreferrer">Links to cross-origin destinations are unsafe</a> by Google, licensed under the <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">Creative Commons Attribution 4.0 License</a>
+</li>
+  <li>
+<a href="https://jakearchibald.com/2016/performance-benefits-of-rel-noopener/" target="_blank" rel="noopener noreferrer">The performance benefits of <code class="language-plaintext highlighter-rouge">rel=noopener</code></a> by Jake Archibald</li>
+  <li>
+<a href="http://www.azarask.in/blog/post/a-new-type-of-phishing-attack/" target="_blank" rel="noopener noreferrer">Tabnabbing: A New Type of Phishing Attack</a> by Aza Raskin</li>
+  <li>
+<a href="https://mathiasbynens.github.io/rel-noopener/" target="_blank" rel="noopener noreferrer">About <code class="language-plaintext highlighter-rouge">rel=noopener</code></a> Github Page from Mathias Bynens</li>
+</ul>
+
+<p><em>Article about the debate (further posts on the bottom of the page)</em>:</p>
+
+<ul>
+  <li>
+<a href="https://www.caktusgroup.com/blog/2017/03/01/opening-external-links-same-tab-or-new/" target="_blank" rel="noopener noreferrer">Opening External Links: Same Tab or New?</a> by Basia Coulter</li>
+</ul>
+
+
+    </div>
+<div class="tags rhythm-onehalf">
+        <strong>Tagged with:</strong>
+        
+        <a class="postmeta__item postmeta__item--tag label" href="https://huzooka.github.io/tag/security">Security</a>
+        
+        <a class="postmeta__item postmeta__item--tag label" href="https://huzooka.github.io/tag/external-links">External links</a>
+        
+    </div>
+<a class="u-url" href="/development/2018/05/28/external-links-blank.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="footer h-card bg-dark">
+    <data class="u-url" href="/"></data>
+
+    <div class="wrapper">
+        <div class="footer__row">
+            <div class="footer__col footer__col--slogan">
+                <div class="slogan">
+                    <span class="logo slogan__logo"></span>
+                    <p class="slogan__slogan">The Github Page where I temporarily publish my professional posts</p>
+                </div>
+            </div>
+
+            <div class="footer__col">
+<ul class="menu-list font-heading">
+<li class="menu-list__item h4">
+        <a href="/about/">About</a>
+    </li>
+<li class="menu-list__item h4">
+        <a href="https://huzooka.github.io/tag/drupal">Drupal</a>
+    </li>
+<li class="menu-list__item h4">
+        <a href="https://huzooka.github.io/tag/migration">Migration</a>
+    </li>
+<li class="menu-list__item h4">
+        <a href="/feed.xml">RSS</a>
+    </li>
+</ul>
+</div>
+
+            <div class="footer__col">
+<ul class="menu-list font-heading">
+<li class="menu-list__item h4"><a href="https://drupal.org/u/huzooka" target="_blank" rel="noopener noreferrer">Drupal.org</a></li>
+<li class="menu-list__item h4"><a href="https://github.com/zolhorvath" target="_blank" rel="noopener noreferrer">Github</a></li>
+<li class="menu-list__item h4"><a href="https://www.linkedin.com/in/zoltan-attila-horvath" target="_blank" rel="noopener noreferrer">Linkedin</a></li>
+<li class="menu-list__item h4"><a href="https://www.twitter.com/huzooka" target="_blank" rel="noopener noreferrer">Twitter</a></li>
+</ul>
+</div>
+        </div>
+    </div>
+</footer>
+</body>
+
+</html>

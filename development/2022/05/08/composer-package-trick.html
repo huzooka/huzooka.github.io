@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Composer Package Trick for Installing Incompatible Composer Extensions | HuZooka</title>
+<meta name="generator" content="Jekyll v4.2.2">
+<meta property="og:title" content="Composer Package Trick for Installing Incompatible Composer Extensions">
+<meta name="author" content="Zoltán Horváth">
+<meta property="og:locale" content="en_US">
+<meta name="description" content="How to suppress the repository info of a Composer package to make it installable in your Drupal 10 project.">
+<meta property="og:description" content="How to suppress the repository info of a Composer package to make it installable in your Drupal 10 project.">
+<link rel="canonical" href="https://huzooka.github.io/development/2022/05/08/composer-package-trick.html">
+<meta property="og:url" content="https://huzooka.github.io/development/2022/05/08/composer-package-trick.html">
+<meta property="og:site_name" content="HuZooka">
+<meta property="og:image" content="https://huzooka.github.io/simple.png">
+<meta property="og:type" content="article">
+<meta property="article:published_time" content="2022-05-08T17:30:00+00:00">
+<meta name="twitter:card" content="summary_large_image">
+<meta property="twitter:image" content="https://huzooka.github.io/simple.png">
+<meta property="twitter:title" content="Composer Package Trick for Installing Incompatible Composer Extensions">
+<meta name="twitter:site" content="@huzooka">
+<meta name="twitter:creator" content="@huzooka">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Zoltán Horváth"},"dateModified":"2022-05-08T17:30:00+00:00","datePublished":"2022-05-08T17:30:00+00:00","description":"How to suppress the repository info of a Composer package to make it installable in your Drupal 10 project.","headline":"Composer Package Trick for Installing Incompatible Composer Extensions","image":"https://huzooka.github.io/simple.png","mainEntityOfPage":{"@type":"WebPage","@id":"https://huzooka.github.io/development/2022/05/08/composer-package-trick.html"},"url":"https://huzooka.github.io/development/2022/05/08/composer-package-trick.html"}</script>
+
+<link rel="stylesheet" href="/assets/main.css?f3f2fc8c">
+<link type="application/atom+xml" rel="alternate" href="https://huzooka.github.io/feed.xml" title="HuZooka">
+<link rel="icon" href="/favicon.ico?b6c405af" type="image/vnd.microsoft.icon">
+    <link rel="preload" href="/assets/texb-875-125.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+    <link rel="preload" href="/assets/charissilr.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+    <link rel="preload" href="/assets/charissilb.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+</head>
+<body>
+<header class="site-header">
+
+    <div class="wrapper">
+<a class="site-title h3" rel="author" href="/">
+            <span class="logo logo--header"></span>HuZooka
+        </a><nav class="site-nav">
+            <input type="checkbox" id="nav-trigger" class="nav-trigger">
+            <label for="nav-trigger" class="menu-icon">
+                <span class="menu-icon__bar"></span>
+                <span class="menu-icon__bar"></span>
+                <span class="menu-icon__bar"></span>
+            </label>
+
+            <div class="trigger">
+<a class="nav-link h5" href="/about/">About</a><a class="nav-link h5" href="https://huzooka.github.io/tag/drupal">Drupal</a><a class="nav-link h5" href="https://huzooka.github.io/tag/migration">Migration</a>
+</div>
+        </nav>
+</div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+    <header class="post-header">
+        <h1 class="post-title p-name" itemprop="name headline">Composer Package Trick for Installing Incompatible Composer Extensions</h1>
+
+        <p class="postmeta">
+            <time class="dt-published" datetime="2022-05-08T17:30:00+00:00" itemprop="datePublished">May 8, 2022
+            </time>• <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span class="p-author h-card" itemprop="name">Zoltán Horváth</span></span></p>
+    </header>
+
+    <div class="post-content e-content rhythm-onehalf" itemprop="articleBody">
+        <p class="lead">This is the up-to-date, user-friendly version of the <a href="/development/2020/04/08/composer-package-drupal9.html">post I wrote 2 years ago</a> about the same topic.</p>
+
+<p><a href="#steps-to-follow">⇩ Jump to the steps</a>.</p>
+
+<p>In this post you will be able to see how to add an incompatible Drupal module to a Drupal 10 project with Composer. At the time I’m writing (well, making up-to-date) this post, I’m not able to do this with <a href="https://drupal.org/project/eme" target="_blank" rel="noopener noreferrer">Entity Migrate Export</a> module: both the latest tag release (<code class="language-plaintext highlighter-rouge">1.0.0-alpha10</code>) and the latest branch release (<code class="language-plaintext highlighter-rouge">1.0.x-dev</code>) require Drupal core <code class="language-plaintext highlighter-rouge">^8.9 || ^9</code>:</p>
+
+<pre><code class="language-cli">$ composer require drupal/eme
+Using version ^1.0@alpha for drupal/eme
+./composer.json has been updated
+Running composer update drupal/eme
+Gathering patches for root package.
+No patches supplied.
+Loading composer repositories with package information
+Updating dependencies
+Info from https://repo.packagist.org: #StandWithUkraine
+Your requirements could not be resolved to an installable set of packages.
+
+  Problem 1
+    - drupal/eme[1.0.0-alpha1, ..., 1.0.0-alpha5] require drupal/core ^8.7.7 || ^9 -&gt; found drupal/core[8.7.7, ..., 8.9.x-dev, 9.0.0-alpha1, ..., 9.5.x-dev] but the package is fixed to 10.0.x-dev (lock file version) by a partial update and that version does not match. Make sure you list it as an argument for the update command.
+    - drupal/eme[1.0.0-alpha6, ..., 1.0.0-alpha10] require drupal/core ^8.9 || ^9 -&gt; found drupal/core[8.9.0-beta1, ..., 8.9.x-dev, 9.0.0-alpha1, ..., 9.5.x-dev] but the package is fixed to 10.0.x-dev (lock file version) by a partial update and that version does not match. Make sure you list it as an argument for the update command.
+    - Root composer.json requires drupal/eme ^1.0@alpha -&gt; satisfiable by drupal/eme[1.0.0-alpha1, ..., 1.0.0-alpha10].
+
+Use the option --with-all-dependencies (-W) to allow upgrades, downgrades and removals for packages currently locked to specific versions.
+
+Installation failed, reverting ./composer.json and ./composer.lock to their original content.
+</code></pre>
+
+<h2 id="steps-to-follow">Steps to follow</h2>
+
+<h3 id="find-the-corresponding-package-info-json-file">Find the corresponding package info JSON file</h3>
+
+<ol>
+  <li>We will be using the package info that’s already available for your composer. So, locate where your composer cache is, by executing <code class="language-plaintext highlighter-rouge">composer config cache-dir</code>:
+    <div class="language-shell highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr>
+<td class="rouge-gutter gl"><pre class="lineno">1
+2
+</pre></td>
+<td class="rouge-code"><pre><span class="nv">$ </span>composer config cache-dir
+/Users/zoli/Library/Caches/composer
+</pre></td>
+</tr></tbody></table></code></pre></div>    </div>
+  </li>
+  <li>
+    <p>The package info will be inside the cache directory’s <code class="language-plaintext highlighter-rouge">repo</code> subdirectory, in the corresponding repository subdirectory. On my development environment, in case of Drupal extensions, this is <code class="language-plaintext highlighter-rouge">/Users/zoli/Library/Caches/composer/repo/https---packages.drupal.org-8/</code>.</p>
+  </li>
+  <li>For Entity Migrate Export, we will have two different JSON files: one for the <em>usual</em> tag-based releases (this is <code class="language-plaintext highlighter-rouge">provider-drupal~eme.json</code>), and an another one for the <em>branch</em> based releases (<code class="language-plaintext highlighter-rouge">provider-drupal~eme~dev.json</code>). Imho the best practice is to <em>replace</em> the latest release we found in the <em>tag</em> info JSON: so if the maintainer releases a newer (and already compatible) release, then we will also be informed through Drupal’s Module Update UI.</li>
+</ol>
+
+<h3 id="add-the-right-json-object-to-your-root-composerjson-as-custom-package">Add the right JSON object to your root <code class="language-plaintext highlighter-rouge">composer.json</code> as custom package</h3>
+
+<p>One rule here: your custom package entry must be added before the Drupal packagist repository.</p>
+
+<ol>
+  <li>Open the package file, locate the latest release. This is the info you will be using:
+    <div class="language-json highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr>
+<td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+</pre></td>
+<td class="rouge-code"><pre><span class="p">{</span><span class="w">
+  </span><span class="nl">"packages"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"drupal/eme"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+      </span><span class="p">{</span><span class="w">
+        </span><span class="nl">"keywords"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"Drupal"</span><span class="p">],</span><span class="w">
+        </span><span class="nl">"homepage"</span><span class="p">:</span><span class="w"> </span><span class="s2">"https://www.drupal.org/project/eme"</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"version"</span><span class="p">:</span><span class="w"> </span><span class="s2">"1.0.0-alpha10"</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"version_normalized"</span><span class="p">:</span><span class="w"> </span><span class="s2">"1.0.0.0-alpha10"</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"license"</span><span class="p">:</span><span class="w"> </span><span class="s2">"GPL-2.0-or-later"</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"authors"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="err">…</span><span class="p">],</span><span class="w">
+        </span><span class="nl">"support"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="err">…</span><span class="p">},</span><span class="w">
+        </span><span class="nl">"source"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="err">…</span><span class="p">},</span><span class="w">
+        </span><span class="nl">"dist"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="err">…</span><span class="p">},</span><span class="w">
+        </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"drupal-module"</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"uid"</span><span class="p">:</span><span class="w"> </span><span class="s2">"eme-3219974"</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"drupal/eme"</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"extra"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="err">…</span><span class="p">},</span><span class="w">
+        </span><span class="nl">"description"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Exports content entities into a migration module"</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"require"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+          </span><span class="nl">"drupal/core"</span><span class="p">:</span><span class="w"> </span><span class="s2">"^8.9 || ^9"</span><span class="w">
+        </span><span class="p">},</span><span class="w">
+        </span><span class="nl">"require-dev"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+          </span><span class="nl">"drupal/migrate_tools"</span><span class="p">:</span><span class="w"> </span><span class="s2">"^5"</span><span class="p">,</span><span class="w">
+          </span><span class="nl">"drupal/migrate_plus"</span><span class="p">:</span><span class="w"> </span><span class="s2">"^5"</span><span class="p">,</span><span class="w">
+          </span><span class="nl">"drush/drush"</span><span class="p">:</span><span class="w"> </span><span class="s2">"^9 || ^10"</span><span class="w">
+        </span><span class="p">}</span><span class="w">
+      </span><span class="p">},</span><span class="w">
+      </span><span class="p">{</span><span class="err">…</span><span class="p">},</span><span class="w">
+      </span><span class="p">{</span><span class="err">…</span><span class="p">}</span><span class="w">
+    </span><span class="p">]</span><span class="w">
+  </span><span class="p">},</span><span class="w">
+  </span><span class="nl">"minified"</span><span class="p">:</span><span class="w"> </span><span class="s2">"composer/2.0"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"last-modified"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Sat, 30 Apr 2022 16:30:38 GMT"</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></pre></td>
+</tr></tbody></table></code></pre></div>    </div>
+  </li>
+  <li>The section you will paste into the root <code class="language-plaintext highlighter-rouge">composer.json</code> is a single release info, an object which starts with the <code class="language-plaintext highlighter-rouge">keywords</code> key. Add this section to your root <code class="language-plaintext highlighter-rouge">composer.json</code>, above Drupal’s repository:
+    <div class="language-json highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr>
+<td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+</pre></td>
+<td class="rouge-code"><pre><span class="p">{</span><span class="w">
+  </span><span class="nl">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"z.a.horvath/incubator"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"drupal-project"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"repositories"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"custom repo key"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+      </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"package"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"package"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+        </span><span class="nl">"keywords"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">"Drupal"</span><span class="p">],</span><span class="w">
+        </span><span class="nl">"homepage"</span><span class="p">:</span><span class="w"> </span><span class="s2">"https://www.drupal.org/project/eme"</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"version"</span><span class="p">:</span><span class="w"> </span><span class="s2">"1.0.0-alpha10"</span><span class="w">
+        </span><span class="err">…</span><span class="w">
+      </span><span class="p">}</span><span class="w">
+    </span><span class="p">},</span><span class="w">
+    </span><span class="nl">"drupal"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+      </span><span class="nl">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"composer"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"url"</span><span class="p">:</span><span class="w"> </span><span class="s2">"https://packages.drupal.org/8"</span><span class="w">
+    </span><span class="p">}</span><span class="w">
+  </span><span class="p">},</span><span class="w">
+  </span><span class="err">…</span><span class="w">
+</span><span class="p">}</span><span class="w">       
+</span></pre></td>
+</tr></tbody></table></code></pre></div>    </div>
+  </li>
+</ol>
+
+<h3 id="fix-the-requirements-version-constraints-which-cause-the-conflict">Fix the requirement’s version constraints which cause the conflict</h3>
+
+<p>Locate the <code class="language-plaintext highlighter-rouge">require</code> key in the package info, and modify the version constraints which cause conflicts:</p>
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr>
+<td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+</pre></td>
+<td class="rouge-code"><pre><span class="nl">"require"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+  </span><span class="nl">"drupal/core"</span><span class="p">:</span><span class="w"> </span><span class="s2">"^8.9 || ^9"</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></pre></td>
+</tr></tbody></table></code></pre></div></div>
+<p>Let’s change the version constraint of <code class="language-plaintext highlighter-rouge">drupal/core</code> requirement, and allow Drupal 10 as well:</p>
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr>
+<td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+</pre></td>
+<td class="rouge-code"><pre><span class="nl">"require"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+  </span><span class="nl">"drupal/core"</span><span class="p">:</span><span class="w"> </span><span class="s2">"^8.9 || ^9 || ^10"</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></pre></td>
+</tr></tbody></table></code></pre></div></div>
+
+<h2 id="summary">Summary</h2>
+
+<p>With the solution explained above we are able to download and use incompatible extensions in our Composer project. Of course these extensions might be <em>really</em> incompatible, but as soon as we can download them we can use <a href="https://github.com/cweagans/composer-patches" target="_blank" rel="noopener noreferrer">cweagans/composer-patches</a> to apply patches fixing the issues, or we can start writing the fix and share it with the community.</p>
+
+    </div>
+<div class="tags rhythm-onehalf">
+        <strong>Tagged with:</strong>
+        
+        <a class="postmeta__item postmeta__item--tag label" href="https://huzooka.github.io/tag/composer">Composer</a>
+        
+        <a class="postmeta__item postmeta__item--tag label" href="https://huzooka.github.io/tag/drupal">Drupal</a>
+        
+    </div>
+<a class="u-url" href="/development/2022/05/08/composer-package-trick.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="footer h-card bg-dark">
+    <data class="u-url" href="/"></data>
+
+    <div class="wrapper">
+        <div class="footer__row">
+            <div class="footer__col footer__col--slogan">
+                <div class="slogan">
+                    <span class="logo slogan__logo"></span>
+                    <p class="slogan__slogan">The Github Page where I temporarily publish my professional posts</p>
+                </div>
+            </div>
+
+            <div class="footer__col">
+<ul class="menu-list font-heading">
+<li class="menu-list__item h4">
+        <a href="/about/">About</a>
+    </li>
+<li class="menu-list__item h4">
+        <a href="https://huzooka.github.io/tag/drupal">Drupal</a>
+    </li>
+<li class="menu-list__item h4">
+        <a href="https://huzooka.github.io/tag/migration">Migration</a>
+    </li>
+<li class="menu-list__item h4">
+        <a href="/feed.xml">RSS</a>
+    </li>
+</ul>
+</div>
+
+            <div class="footer__col">
+<ul class="menu-list font-heading">
+<li class="menu-list__item h4"><a href="https://drupal.org/u/huzooka" target="_blank" rel="noopener noreferrer">Drupal.org</a></li>
+<li class="menu-list__item h4"><a href="https://github.com/zolhorvath" target="_blank" rel="noopener noreferrer">Github</a></li>
+<li class="menu-list__item h4"><a href="https://www.linkedin.com/in/zoltan-attila-horvath" target="_blank" rel="noopener noreferrer">Linkedin</a></li>
+<li class="menu-list__item h4"><a href="https://www.twitter.com/huzooka" target="_blank" rel="noopener noreferrer">Twitter</a></li>
+</ul>
+</div>
+        </div>
+    </div>
+</footer>
+</body>
+
+</html>

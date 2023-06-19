@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mistakes We Make in Drupal to Drupal Migration Projects | HuZooka</title>
+<meta name="generator" content="Jekyll v4.2.2">
+<meta property="og:title" content="Mistakes We Make in Drupal to Drupal Migration Projects">
+<meta name="author" content="Zoltán Horváth">
+<meta property="og:locale" content="en_US">
+<meta name="description" content="Migrating Drupal 7 → Drupal 8+ is very resource intensive and takes a lot of time… But is this statement really true?">
+<meta property="og:description" content="Migrating Drupal 7 → Drupal 8+ is very resource intensive and takes a lot of time… But is this statement really true?">
+<link rel="canonical" href="https://huzooka.github.io/development/2020/05/03/drupal-migration-mistakes.html">
+<meta property="og:url" content="https://huzooka.github.io/development/2020/05/03/drupal-migration-mistakes.html">
+<meta property="og:site_name" content="HuZooka">
+<meta property="og:image" content="https://huzooka.github.io/simple.png">
+<meta property="og:type" content="article">
+<meta property="article:published_time" content="2020-05-03T06:26:22+00:00">
+<meta name="twitter:card" content="summary_large_image">
+<meta property="twitter:image" content="https://huzooka.github.io/simple.png">
+<meta property="twitter:title" content="Mistakes We Make in Drupal to Drupal Migration Projects">
+<meta name="twitter:site" content="@huzooka">
+<meta name="twitter:creator" content="@huzooka">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Zoltán Horváth"},"dateModified":"2020-05-03T06:26:22+00:00","datePublished":"2020-05-03T06:26:22+00:00","description":"Migrating Drupal 7 → Drupal 8+ is very resource intensive and takes a lot of time… But is this statement really true?","headline":"Mistakes We Make in Drupal to Drupal Migration Projects","image":"https://huzooka.github.io/simple.png","mainEntityOfPage":{"@type":"WebPage","@id":"https://huzooka.github.io/development/2020/05/03/drupal-migration-mistakes.html"},"url":"https://huzooka.github.io/development/2020/05/03/drupal-migration-mistakes.html"}</script>
+
+<link rel="stylesheet" href="/assets/main.css?f3f2fc8c">
+<link type="application/atom+xml" rel="alternate" href="https://huzooka.github.io/feed.xml" title="HuZooka">
+<link rel="icon" href="/favicon.ico?b6c405af" type="image/vnd.microsoft.icon">
+    <link rel="preload" href="/assets/texb-875-125.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+    <link rel="preload" href="/assets/charissilr.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+    <link rel="preload" href="/assets/charissilb.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+</head>
+<body>
+<header class="site-header">
+
+    <div class="wrapper">
+<a class="site-title h3" rel="author" href="/">
+            <span class="logo logo--header"></span>HuZooka
+        </a><nav class="site-nav">
+            <input type="checkbox" id="nav-trigger" class="nav-trigger">
+            <label for="nav-trigger" class="menu-icon">
+                <span class="menu-icon__bar"></span>
+                <span class="menu-icon__bar"></span>
+                <span class="menu-icon__bar"></span>
+            </label>
+
+            <div class="trigger">
+<a class="nav-link h5" href="/about/">About</a><a class="nav-link h5" href="https://huzooka.github.io/tag/drupal">Drupal</a><a class="nav-link h5" href="https://huzooka.github.io/tag/migration">Migration</a>
+</div>
+        </nav>
+</div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+    <header class="post-header">
+        <h1 class="post-title p-name" itemprop="name headline">Mistakes We Make in Drupal to Drupal Migration Projects</h1>
+
+        <p class="postmeta">
+            <time class="dt-published" datetime="2020-05-03T06:26:22+00:00" itemprop="datePublished">May 3, 2020
+            </time>• <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span class="p-author h-card" itemprop="name">Zoltán Horváth</span></span></p>
+    </header>
+
+    <div class="post-content e-content rhythm-onehalf" itemprop="articleBody">
+        <p class="lead">I keep hearing from everyone that Drupal to Drupal migration is a slow, costly task. This is probably why the latest statistics as of April 26, 2020, reported 680,725 running Drupal 7 copies, nearly twice as many as the 358,427 instances reported for Drupal 8+.</p>
+
+<p>There are quite a few cases where this finding really stays true; however, I feel the need to share a few comments on the mistakes often made during Drupal 7 → Drupal 8+ migration.</p>
+
+<h2 id="using-fully-custom-migrations">Using fully custom migrations</h2>
+
+<p>When the Migrate API was committed to Drupal core, the usual concept was fragmented: we suddenly had two types of <em>migration</em>:</p>
+<ul>
+  <li>The migrations in Drupal core became <code class="language-plaintext highlighter-rouge">plugins</code> whose <em>plugin definition</em> (“configuration”) are stored in YAML files in the module’s <code class="language-plaintext highlighter-rouge">migrations</code> subfolder.</li>
+  <li>And at the same time, Migrate Plus introduced a <em>configuration entity</em> which acts as any other configuration entities in core: it can be exported / imported; but in the meantime it only acts as an intermediate layer between core’s migration plugin discovery and the instantiated migration plugin instances.</li>
+</ul>
+
+<p>Before you start writing any migrations, or start creating the content types, vocabularies and the fields of the entities on the destination site, please check out what you have in the module’s <code class="language-plaintext highlighter-rouge">migrations</code> subfolder! Don’t be surprised: the migration plugins in <strong>Drupal core can handle the migration of not only your content but also your configurations</strong> (including for instance your content <em>types</em>, field storages, field instances, view mode configurations)!</p>
+
+<p>And my suggestion in regard to <strong>Migrate Plus migration configuration entities is: do not use them at all</strong>. Their only feature is that if you break their structure, you cannot use your Drupal instance until you find what’s wrong. And you have to re-import them every time you do a small change in them. Create a standalone migration-specific custom module, and implement the missing migrations in the module’s <code class="language-plaintext highlighter-rouge">migrations</code> folder.</p>
+
+<p>Because of the above, I strongly suggest <strong>not to use Migrate Upgrade</strong> at all. If you have to make a small fix to a core or contrib module provided migration, then use a <code class="language-plaintext highlighter-rouge">hook_migration_plugins_alter()</code> implementation!</p>
+
+<h2 id="content-structure-change-is-performed-with-the-migration">Content structure change is performed with the migration</h2>
+
+<p>I often encounter cases where the structure of the content is also changed during the Drupal 7 → Drupal 8+ migration:</p>
+
+<ul>
+  <li>Content types are merged together.</li>
+  <li>We migrate into a field with a different name than we have on the source.</li>
+  <li>Certain fields aren’t migrated at all.</li>
+</ul>
+
+<p>I acknowledge that these may be needed indeed, but I must note that they should not be implemented during migration:</p>
+
+<p>On one hand, it is <em>much easier</em> to run the migration while retaining the content structure of the Drupal 7 page and to handle the change in the content structure in the next step. On the other hand, porting the Drupal 7 theme will also be very easy, and using the core and contrib migrations, the upgrade can be done much faster.</p>
+
+<p>If you do it this way, the project can start using a modern, longer-supported foundation much earlier; and the business side is, that the customer can also decide whether it is so important for them to change the structure and create a completely new theme to sacrifice resources for it.</p>
+
+<h2 id="missing-or-changing-links-uri">Missing or changing links (URI)</h2>
+
+<blockquote cite="Tim Berners-Lee, 1998">
+  <p>What makes a cool URI?
+  A cool URI is one which does not change.
+  What sorts of URI change?
+  URIs don’t change: people change them.</p>
+</blockquote>
+
+<p>Please don’t let your URIs be changed! <a href="https://www.w3.org/Provider/Style/URI" target="_blank" rel="noopener noreferrer">Cool URIs don’t change</a>.</p>
+
+<h2 id="failures-of-the-source-are-fixed-in-migration">Failures of the source are fixed in migration</h2>
+
+<p>One of your content is referencing a completely missing entity? There isn’t any file in the <code class="language-plaintext highlighter-rouge">file_managed</code> table with the ID you have in a file field? Or the file cannot be found on Drupal 7’s file system? The author of a content or comment was deleted and does not exist anymore?</p>
+
+<p>These are wrong in the source Drupal 7 instance too! You should fix these issues there! Keep in mind that until you arm your new Drupal 8+ instance, your users will use your current Drupal 7 site. And if you fix the problem in the source, then it will be fixed on the new site as well!</p>
+
+<h2 id="we-use-imperfect-tools">We use imperfect tools</h2>
+
+<p>Using Drush and Migrate Tools to execute the migrations is very handy for us, developers. I think we prefer following the process through a terminal rather than in a browser window on Drupal’s user interface.</p>
+
+<p>But unfortunately the <a href="https://git.drupalcode.org/project/migrate_tools/-/blob/fa456c4b4a/src/Commands/MigrateToolsCommands.php" target="_blank" rel="noopener noreferrer">Drush command we use</a> has some issues <em>you have to be aware of</em>:</p>
+<ul>
+  <li>
+<a href="https://git.drupalcode.org/project/migrate_tools/-/blob/fa456c4b4a/src/Commands/MigrateToolsCommands.php#L691" target="_blank" rel="noopener noreferrer">It seems to have no idea</a> about one of the most useful features of <code class="language-plaintext highlighter-rouge">MigrationPluginManager</code>, so unlike <em>Migrate Drupal UI</em>, it doesn’t use it properly in some cases<sup id="fnref:1" role="doc-noteref"><a href="#fn:1" class="footnote" rel="footnote">1</a></sup>: this is the <a href="https://git.drupalcode.org/project/drupal/-/blob/9.0.x/core/modules/migrate/src/Plugin/MigrationPluginManager.php#L159" target="_blank" rel="noopener noreferrer"><code class="language-plaintext highlighter-rouge">buildDependencyMigration()</code> method</a>.</li>
+  <li>Unlike Migrate Drupal UI, <a href="https://git.drupalcode.org/project/migrate_tools/-/blob/fa456c4b4a/src/Commands/MigrateToolsCommands.php#L716-L734" target="_blank" rel="noopener noreferrer">it doesn’t check whether the destination plugin requirements are met</a>.</li>
+</ul>
+
+<h2 id="we-dont-use-joinable-source-and-id-map-databases">We don’t use joinable source and ID map databases</h2>
+
+<p>Are you aware that <code class="language-plaintext highlighter-rouge">SqlBase</code>-based migrate source plugins are trying to join the ID map tables to their database query before it is executed? I wasn’t. But it is a brilliant feature, and <strong>you should use it</strong> whenever it is possible.</p>
+
+<p>How does it work?</p>
+
+<p>If a migration is about to be executed, the first thing that happens is that its source plugin performs a database query, and then it acts as an iterator which returns the data we may migrate to the destination. And in regard of the joinability of the source and the ID map (<em>destination</em>) databases, the migration works slightly different:</p>
+
+<p>If they aren’t joinable, then each time <code class="language-plaintext highlighter-rouge">SourcePluginBase</code> validates the actual <code class="language-plaintext highlighter-rouge">Row</code>, <a href="https://git.drupalcode.org/project/drupal/-/blob/9.2.x/core/modules/migrate/src/Plugin/migrate/source/SourcePluginBase.php#L417-L424" target="_blank" rel="noopener noreferrer">it checks</a> whether the ID map plugin has any data about the row. And it only prepares and returns the actual source record if the ID map plugin does not have any info about the actual source record<sup id="fnref:2" role="doc-noteref"><a href="#fn:2" class="footnote" rel="footnote">2</a></sup>, or if the ID map plugin tells that the actual record needs update<sup id="fnref:3" role="doc-noteref"><a href="#fn:3" class="footnote" rel="footnote">3</a></sup>. In every other case, it proceeds by checking the next record. This means that if the actual migration has 1000 records, and no extra queries are performed except these above, then executing the migration performs 1001 database queries while it prepares all the source items: There will be one query sent against the source database, and 1000 ID map queries on the destination site.</p>
+
+<p>However, if joining of the source and the ID map queries is possible, <a href="https://git.drupalcode.org/project/drupal/-/blob/9.2.x/core/modules/migrate/src/Plugin/migrate/source/SqlBase.php#L270-L319" target="_blank" rel="noopener noreferrer"><code class="language-plaintext highlighter-rouge">SqlBase</code> will do so</a>: it will initialize itself having only those source records which haven’t been <em>fully</em> migrated yet!</p>
+
+<p>So if you want to save some time and IO load, consider making the source database joinable with the destination.</p>
+
+<h2 id="summary">Summary</h2>
+
+<p>I definitely think that Drupal 7 → Drupal 8+ migration is a much simpler task than many people think. And if you are aware of the above, I hope that you will also agree.</p>
+
+<hr>
+
+<p class="footnotes"><em>Footnotes</em>:</p>
+
+<div class="footnotes">
+  <ol>
+    <li id="fn:1" role="doc-footnote">
+      <p>Migrate Drupal UI instantiates the migrations by <a href="https://git.drupalcode.org/project/drupal/-/blob/9.0.x/core/modules/migrate/src/Plugin/MigrationPluginManager.php#L100" target="_blank" rel="noopener noreferrer">calling <code class="language-plaintext highlighter-rouge">MigrationPluginManagerInterface::createInstances()</code></a>, the migrate import command of <a href="https://git.drupalcode.org/project/migrate_tools/-/blob/fa456c4b4a/src/Commands/MigrateToolsCommands.php#L691-L712" target="_blank" rel="noopener noreferrer">Migrate Tools only uses this order if</a> you ask it to execute any migrations. But during development, we usually execute certain migrations – and because of this behavior, we have to take extra care on the order of the IDs we pass to the command as argument; or use <code class="language-plaintext highlighter-rouge">--execute-dependencies</code>. <a href="#fnref:1" class="reversefootnote" role="doc-backlink">↩</a></p>
+    </li>
+    <li id="fn:2" role="doc-footnote">
+      <p>This check is performed based on the identifiers of the source record: Drupal core’s Sql ID map plugin performs a query to its migrate map table, and if there is no result, then it means that:</p>
+
+      <ol>
+        <li>The actual record wasn’t ever migrated, or it was rolled back before the current operation.</li>
+        <li>The migration operation ended up in an uncatched PHP exception which completely broke the process, so MigrateExecutable wasn’t able to save any source-destination map data or migration message with the ID map plugin.</li>
+      </ol>
+      <p><a href="#fnref:2" class="reversefootnote" role="doc-backlink">↩</a></p>
+    </li>
+    <li id="fn:3" role="doc-footnote">
+      <p>This means that the actual row’s ID map plugin returns with the value <a href="https://git.drupalcode.org/project/drupal/-/blob/9.2.x/core/modules/migrate/src/Plugin/MigrateIdMapInterface.php#L43" target="_blank" rel="noopener noreferrer"><code class="language-plaintext highlighter-rouge">MigrateMapInterface::STATUS_NEEDS_UPDATE</code></a>. Drupal core’s Sql ID map plugin stores this status in its <code class="language-plaintext highlighter-rouge">migrate_map_*</code> table in the <code class="language-plaintext highlighter-rouge">source_row_status</code> column. <a href="#fnref:3" class="reversefootnote" role="doc-backlink">↩</a></p>
+    </li>
+  </ol>
+</div>
+
+    </div>
+<div class="tags rhythm-onehalf">
+        <strong>Tagged with:</strong>
+        
+        <a class="postmeta__item postmeta__item--tag label" href="https://huzooka.github.io/tag/drupal">Drupal</a>
+        
+        <a class="postmeta__item postmeta__item--tag label" href="https://huzooka.github.io/tag/migration">Migration</a>
+        
+    </div>
+<a class="u-url" href="/development/2020/05/03/drupal-migration-mistakes.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="footer h-card bg-dark">
+    <data class="u-url" href="/"></data>
+
+    <div class="wrapper">
+        <div class="footer__row">
+            <div class="footer__col footer__col--slogan">
+                <div class="slogan">
+                    <span class="logo slogan__logo"></span>
+                    <p class="slogan__slogan">The Github Page where I temporarily publish my professional posts</p>
+                </div>
+            </div>
+
+            <div class="footer__col">
+<ul class="menu-list font-heading">
+<li class="menu-list__item h4">
+        <a href="/about/">About</a>
+    </li>
+<li class="menu-list__item h4">
+        <a href="https://huzooka.github.io/tag/drupal">Drupal</a>
+    </li>
+<li class="menu-list__item h4">
+        <a href="https://huzooka.github.io/tag/migration">Migration</a>
+    </li>
+<li class="menu-list__item h4">
+        <a href="/feed.xml">RSS</a>
+    </li>
+</ul>
+</div>
+
+            <div class="footer__col">
+<ul class="menu-list font-heading">
+<li class="menu-list__item h4"><a href="https://drupal.org/u/huzooka" target="_blank" rel="noopener noreferrer">Drupal.org</a></li>
+<li class="menu-list__item h4"><a href="https://github.com/zolhorvath" target="_blank" rel="noopener noreferrer">Github</a></li>
+<li class="menu-list__item h4"><a href="https://www.linkedin.com/in/zoltan-attila-horvath" target="_blank" rel="noopener noreferrer">Linkedin</a></li>
+<li class="menu-list__item h4"><a href="https://www.twitter.com/huzooka" target="_blank" rel="noopener noreferrer">Twitter</a></li>
+</ul>
+</div>
+        </div>
+    </div>
+</footer>
+</body>
+
+</html>

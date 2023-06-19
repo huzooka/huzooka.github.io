@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Migrating moderated Drupal 7 content to Drupal 9? There is a module for that! | HuZooka</title>
+<meta name="generator" content="Jekyll v4.2.2">
+<meta property="og:title" content="Migrating moderated Drupal 7 content to Drupal 9? There is a module for that!">
+<meta name="author" content="Zoltán Horváth">
+<meta property="og:locale" content="en_US">
+<meta name="description" content="Why the Workbench Moderation Migrate module works the way it does.">
+<meta property="og:description" content="Why the Workbench Moderation Migrate module works the way it does.">
+<link rel="canonical" href="https://huzooka.github.io/development/2021/11/14/workbench-moderation-migrate.html">
+<meta property="og:url" content="https://huzooka.github.io/development/2021/11/14/workbench-moderation-migrate.html">
+<meta property="og:site_name" content="HuZooka">
+<meta property="og:image" content="https://huzooka.github.io/simple.png">
+<meta property="og:type" content="article">
+<meta property="article:published_time" content="2021-11-14T12:06:43+00:00">
+<meta name="twitter:card" content="summary_large_image">
+<meta property="twitter:image" content="https://huzooka.github.io/simple.png">
+<meta property="twitter:title" content="Migrating moderated Drupal 7 content to Drupal 9? There is a module for that!">
+<meta name="twitter:site" content="@huzooka">
+<meta name="twitter:creator" content="@huzooka">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Zoltán Horváth"},"dateModified":"2021-11-14T12:06:43+00:00","datePublished":"2021-11-14T12:06:43+00:00","description":"Why the Workbench Moderation Migrate module works the way it does.","headline":"Migrating moderated Drupal 7 content to Drupal 9? There is a module for that!","image":"https://huzooka.github.io/simple.png","mainEntityOfPage":{"@type":"WebPage","@id":"https://huzooka.github.io/development/2021/11/14/workbench-moderation-migrate.html"},"url":"https://huzooka.github.io/development/2021/11/14/workbench-moderation-migrate.html"}</script>
+
+<link rel="stylesheet" href="/assets/main.css?f3f2fc8c">
+<link type="application/atom+xml" rel="alternate" href="https://huzooka.github.io/feed.xml" title="HuZooka">
+<link rel="icon" href="/favicon.ico?b6c405af" type="image/vnd.microsoft.icon">
+    <link rel="preload" href="/assets/texb-875-125.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+    <link rel="preload" href="/assets/charissilr.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+    <link rel="preload" href="/assets/charissilb.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+</head>
+<body>
+<header class="site-header">
+
+    <div class="wrapper">
+<a class="site-title h3" rel="author" href="/">
+            <span class="logo logo--header"></span>HuZooka
+        </a><nav class="site-nav">
+            <input type="checkbox" id="nav-trigger" class="nav-trigger">
+            <label for="nav-trigger" class="menu-icon">
+                <span class="menu-icon__bar"></span>
+                <span class="menu-icon__bar"></span>
+                <span class="menu-icon__bar"></span>
+            </label>
+
+            <div class="trigger">
+<a class="nav-link h5" href="/about/">About</a><a class="nav-link h5" href="https://huzooka.github.io/tag/drupal">Drupal</a><a class="nav-link h5" href="https://huzooka.github.io/tag/migration">Migration</a>
+</div>
+        </nav>
+</div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+    <header class="post-header">
+        <h1 class="post-title p-name" itemprop="name headline">Migrating moderated Drupal 7 content to Drupal 9? There is a module for that!</h1>
+
+        <p class="postmeta">
+            <time class="dt-published" datetime="2021-11-14T12:06:43+00:00" itemprop="datePublished">November 14, 2021
+            </time>• <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span class="p-author h-card" itemprop="name">Zoltán Horváth</span></span></p>
+    </header>
+
+    <div class="post-content e-content rhythm-onehalf" itemprop="articleBody">
+        <p class="lead">This August we got a <em>bug report</em> from a customer: They had an issue with the published state of their migrated nodes. Their complaint was that some of their nodes were migrated with the latest revision being active for anyone, while the correct visible revision should have been a previous node version.</p>
+
+<p>We checked their installed Drupal 7 modules, and our suspicion was confirmed: the source site was using <a href="https://www.drupal.org/project/workbench_moderation" target="_blank" rel="noopener noreferrer">Workbench Moderation</a> configured to provide moderation workflows for some of their content types. And at the time we didn’t have any solutions for correctly migrating moderated content to Drupal 9.</p>
+
+<p>I guess you won’t be too surprised if I say that Acquia decided to fund the development of moderated content types and their moderation states. This ended in <a href="https://www.drupal.org/project/workbench_moderation_migrate" target="_blank" rel="noopener noreferrer"><strong>Workbench Moderation Migrate</strong></a>, and I am telling you about how the moderation worked in Drupal 7 and how it works in Drupal 9, and what was the greatest challenge I had to solve in the migration paths.</p>
+
+<h2 id="moderated-content">Moderated content</h2>
+
+<p>The main feature of content moderation consists of the following things:</p>
+
+<ul>
+  <li>It provides <em>moderation states</em> a content can be in (<em>Draft</em>, <em>In Review</em>, <em>Published</em>, <em>Archived</em> etc.), and</li>
+  <li>
+<em>Transitions</em> between the states; and rules around when a transition can be used on a moderated content, and what state will be applied on the content if the transition is performed.</li>
+</ul>
+
+<p>This ecosystem allows you to have a published content version that is live and also have a separate working copy that is undergoes reviewing before it gets published, replacing the previous live content version.</p>
+
+<h3 id="moderated-content-in-drupal7">Moderated content in Drupal 7</h3>
+
+<p>Drupal 7 doesn’t have any support for “forward” (<a href="https://drupal.org/i/2890364" target="_blank" rel="noopener noreferrer">or “pending”</a>): it always checks the revision with the highest revision ID. And users always see (or don’t see) this most recent node version.</p>
+
+<p><a href="https://www.drupal.org/project/workbench_moderation" target="_blank" rel="noopener noreferrer">Drupal 7 Workbench Moderation</a> works around this behavior. Whenever a user creates or edits a non-public draft of an already published node, the module saves a new, published revision which is the clone of the most recent published version. and since the last saved published revision has a higher revision ID than the “pending” version, users will not notice any change. (But in fact they will see a new revision.)</p>
+
+<p>Workbench Moderation tracks the state transitions in its history database table, which contains an incremental history ID, an entity and an entity revision ID, the previous and the new state of the version, and the time when the transition happened.</p>
+
+<p>An example how this works in Drupal 7:</p>
+
+<div class="table-wrapper"><table caption="Published node revision is #9, which is a clone of #7. But editors are editing #5 (this is what “current” means).">
+  <thead>
+    <tr>
+      <th style="text-align: right">#</th>
+      <th style="text-align: left">Action performed</th>
+      <th style="text-align: right">Rev. ID</th>
+      <th style="text-align: left">From</th>
+      <th style="text-align: left">To</th>
+      <th style="text-align: center">Public</th>
+      <th style="text-align: center"><em>Current</em></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: right">1</td>
+      <td style="text-align: left">New node, sent to review</td>
+      <td style="text-align: right">1</td>
+      <td style="text-align: left"> </td>
+      <td style="text-align: left">in_review</td>
+      <td style="text-align: center">◯</td>
+      <td style="text-align: center">◯</td>
+    </tr>
+    <tr>
+      <td style="text-align: right">2</td>
+      <td style="text-align: left">Reviewer publishes</td>
+      <td style="text-align: right">2</td>
+      <td style="text-align: left">in_review</td>
+      <td style="text-align: left">published</td>
+      <td style="text-align: center">◯</td>
+      <td style="text-align: center">◯</td>
+    </tr>
+    <tr>
+      <td style="text-align: right">3</td>
+      <td style="text-align: left">User creates a new draft</td>
+      <td style="text-align: right">3</td>
+      <td style="text-align: left">published</td>
+      <td style="text-align: left">draft</td>
+      <td style="text-align: center">◯</td>
+      <td style="text-align: center">◯</td>
+    </tr>
+    <tr>
+      <td style="text-align: right">4</td>
+      <td style="text-align: left"><em>WBM clones rev. #2</em></td>
+      <td style="text-align: right">4</td>
+      <td style="text-align: left">published</td>
+      <td style="text-align: left">published</td>
+      <td style="text-align: center">◯</td>
+      <td style="text-align: center">◯</td>
+    </tr>
+    <tr>
+      <td style="text-align: right">5</td>
+      <td style="text-align: left">Draft sent to review</td>
+      <td style="text-align: right">5</td>
+      <td style="text-align: left">draft</td>
+      <td style="text-align: left">in_review</td>
+      <td style="text-align: center">◯</td>
+      <td style="text-align: center">◯</td>
+    </tr>
+    <tr>
+      <td style="text-align: right">6</td>
+      <td style="text-align: left"><em>WBM clones rev #4</em></td>
+      <td style="text-align: right">6</td>
+      <td style="text-align: left">published</td>
+      <td style="text-align: left">published</td>
+      <td style="text-align: center">◯</td>
+      <td style="text-align: center">◯</td>
+    </tr>
+    <tr>
+      <td style="text-align: right">7</td>
+      <td style="text-align: left">Pending draft published</td>
+      <td style="text-align: right">7</td>
+      <td style="text-align: left">in_review</td>
+      <td style="text-align: left">published</td>
+      <td style="text-align: center">◯</td>
+      <td style="text-align: center">◯</td>
+    </tr>
+    <tr>
+      <td style="text-align: right">8</td>
+      <td style="text-align: left">New draft</td>
+      <td style="text-align: right">8</td>
+      <td style="text-align: left">published</td>
+      <td style="text-align: left">draft</td>
+      <td style="text-align: center">◯</td>
+      <td style="text-align: center">◉</td>
+    </tr>
+    <tr>
+      <td style="text-align: right">9</td>
+      <td style="text-align: left"><em>WBM clones rev #7</em></td>
+      <td style="text-align: right">9</td>
+      <td style="text-align: left">published</td>
+      <td style="text-align: left">published</td>
+      <td style="text-align: center">◉</td>
+      <td style="text-align: center">◯</td>
+    </tr>
+  </tbody>
+</table></div>
+
+<p><small>Published node revision is #9, which is a clone of #7. But editors are editing #5 (this is what “current” means).</small></p>
+
+<h3 id="content-moderation-module-in-drupal9">Content Moderation module in Drupal 9</h3>
+
+<p>Workflows and Content Moderation added to Drupal 8.2.x have clearer foundations: moderated workflows can track and maintain not only the moderation states of content revisions, but they can manage a flag on the revisions. This flag contains the info whether the version is a default revision or not. And Drupal’s Entity API is also aware of this. If an entity specific (and not entity revision specific!) read operation happens, Entity API checks the most recent revision flagged as being default. And this version’s state will determine whether the user can access the content, and if it is a public state, this will be the version they will see.</p>
+
+<p>Here is the equivalent history data of the steps performed from the previous point on Drupal 9:</p>
+
+<div class="table-wrapper"><table>
+  <thead>
+    <tr>
+      <th style="text-align: right">#</th>
+      <th style="text-align: left">Action performed</th>
+      <th style="text-align: right">Rev. ID</th>
+      <th style="text-align: left">From</th>
+      <th style="text-align: left">To</th>
+      <th style="text-align: right">Public</th>
+      <th style="text-align: right">Default</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: right">1</td>
+      <td style="text-align: left">New node, sent to review</td>
+      <td style="text-align: right">1</td>
+      <td style="text-align: left"> </td>
+      <td style="text-align: left">in_review</td>
+      <td style="text-align: right">◯</td>
+      <td style="text-align: right">◉</td>
+    </tr>
+    <tr>
+      <td style="text-align: right">2</td>
+      <td style="text-align: left">Reviewer publishes</td>
+      <td style="text-align: right">2</td>
+      <td style="text-align: left">in_review</td>
+      <td style="text-align: left">published</td>
+      <td style="text-align: right">◉</td>
+      <td style="text-align: right">◉</td>
+    </tr>
+    <tr>
+      <td style="text-align: right">3</td>
+      <td style="text-align: left">User creates a new draft</td>
+      <td style="text-align: right">3</td>
+      <td style="text-align: left">published</td>
+      <td style="text-align: left">draft</td>
+      <td style="text-align: right">◯</td>
+      <td style="text-align: right">◯</td>
+    </tr>
+    <tr>
+      <td style="text-align: right">4</td>
+      <td style="text-align: left">Draft sent to review</td>
+      <td style="text-align: right">4</td>
+      <td style="text-align: left">draft</td>
+      <td style="text-align: left">in_review</td>
+      <td style="text-align: right">◯</td>
+      <td style="text-align: right">◯</td>
+    </tr>
+    <tr>
+      <td style="text-align: right">5</td>
+      <td style="text-align: left">Pending draft published</td>
+      <td style="text-align: right">5</td>
+      <td style="text-align: left">in_review</td>
+      <td style="text-align: left">published</td>
+      <td style="text-align: right">◉</td>
+      <td style="text-align: right">◉</td>
+    </tr>
+    <tr>
+      <td style="text-align: right">5</td>
+      <td style="text-align: left">New pending draft</td>
+      <td style="text-align: right">6</td>
+      <td style="text-align: left">published</td>
+      <td style="text-align: left">in_review</td>
+      <td style="text-align: right">◯</td>
+      <td style="text-align: right">◯</td>
+    </tr>
+  </tbody>
+</table></div>
+
+<p>Please note how this new “default” flag works: as long as there is no published version, all versions are “default”. It looks weird at first, but it totally makes sense: if a visitor tries to access the content early on, when only the draft revision #1 exists, Drupal should return a 403 response.</p>
+
+<h2 id="how-can-we-move-this-from-drupal7-to-drupal9">How can we move this from Drupal 7 to Drupal 9?</h2>
+
+<p>You may already have a clue what the solution is: we have to identify which node versions are the clones of a previous published revision, and skip their migration. <a href="https://git.drupalcode.org/project/workbench_moderation_migrate/-/blob/63f033bf/src/ModerationStateMigrate.php#L99-L113" target="_blank" rel="noopener noreferrer">And yes, this is its essence</a>, beside other nits – like being able to identify the first published revision. Unfortunately, it wasn’t this easy to solve.</p>
+
+<p>But I had the first rule I set up: <strong>Clones of a published revision shouldn’t be migrated</strong>.</p>
+
+<h2 id="the-biggest-challenges">The biggest challenges</h2>
+
+<p>Drupal 7 Node + Workbench Moderation allows users to change the state of a revision and even to delete revisions on the revision UI<sup id="fnref:1" role="doc-noteref"><a href="#fn:1" class="footnote" rel="footnote">1</a></sup>. It isn’t a big problem if a <em>published version clone</em> was deleted, but in every other case, we will have “holes” in the revision history, and this needs to be bridged somehow.</p>
+
+<h3 id="states-changed-on-revision-ui">States changed on revision UI</h3>
+
+<p>Why is it a problem that the state was changed on the revision UI? Because then Drupal does not create a new revision for the pending draft, so we will have more than one history record for the same revision. This is how it looks (watch out what happens between the sixth and eighth lines):</p>
+
+<div class="table-wrapper"><table>
+  <thead>
+    <tr>
+      <th style="text-align: right">#</th>
+      <th style="text-align: left">Action performed</th>
+      <th style="text-align: right">Rev. ID</th>
+      <th style="text-align: left">From</th>
+      <th style="text-align: left">To</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: right">1</td>
+      <td style="text-align: left">New node, sent to review</td>
+      <td style="text-align: right">1</td>
+      <td style="text-align: left"> </td>
+      <td style="text-align: left">in_review</td>
+    </tr>
+    <tr>
+      <td style="text-align: right">2</td>
+      <td style="text-align: left">Reviewer approves and publishes</td>
+      <td style="text-align: right">2</td>
+      <td style="text-align: left">in_review</td>
+      <td style="text-align: left">published</td>
+    </tr>
+    <tr>
+      <td style="text-align: right">3</td>
+      <td style="text-align: left">Published version was edited</td>
+      <td style="text-align: right">3</td>
+      <td style="text-align: left">published</td>
+      <td style="text-align: left">published</td>
+    </tr>
+    <tr>
+      <td style="text-align: right">4</td>
+      <td style="text-align: left">New draft</td>
+      <td style="text-align: right">4</td>
+      <td style="text-align: left">published</td>
+      <td style="text-align: left">draft</td>
+    </tr>
+    <tr>
+      <td style="text-align: right">5</td>
+      <td style="text-align: left"><em>WBM clones rev #3</em></td>
+      <td style="text-align: right">5</td>
+      <td style="text-align: left">published</td>
+      <td style="text-align: left">published</td>
+    </tr>
+    <tr>
+      <td style="text-align: right">6</td>
+      <td style="text-align: left">New draft sent to review</td>
+      <td style="text-align: right"><strong>6</strong></td>
+      <td style="text-align: left">draft</td>
+      <td style="text-align: left">in_review</td>
+    </tr>
+    <tr>
+      <td style="text-align: right">7</td>
+      <td style="text-align: left"><em>WBM clones rev #5</em></td>
+      <td style="text-align: right"><strong>7</strong></td>
+      <td style="text-align: left">published</td>
+      <td style="text-align: left">published</td>
+    </tr>
+    <tr>
+      <td style="text-align: right">8</td>
+      <td style="text-align: left">Reviewer sets back to draft on rev. UI</td>
+      <td style="text-align: right"><strong>6</strong></td>
+      <td style="text-align: left">in_review</td>
+      <td style="text-align: left">draft</td>
+    </tr>
+    <tr>
+      <td style="text-align: right">9</td>
+      <td style="text-align: left"><em>WBM clones rev #7</em></td>
+      <td style="text-align: right"><strong>8</strong></td>
+      <td style="text-align: left">published</td>
+      <td style="text-align: left">published</td>
+    </tr>
+    <tr>
+      <td style="text-align: right">10</td>
+      <td style="text-align: left">Draft sent back ro review</td>
+      <td style="text-align: right">9</td>
+      <td style="text-align: left">draft</td>
+      <td style="text-align: left">in_review</td>
+    </tr>
+    <tr>
+      <td style="text-align: right">11</td>
+      <td style="text-align: left"><em>WBM clones rev #9</em></td>
+      <td style="text-align: right">10</td>
+      <td style="text-align: left">published</td>
+      <td style="text-align: left">published</td>
+    </tr>
+    <tr>
+      <td style="text-align: right">12</td>
+      <td style="text-align: left">New draft reviewed and published</td>
+      <td style="text-align: right">11</td>
+      <td style="text-align: left">in_review</td>
+      <td style="text-align: left">published</td>
+    </tr>
+    <tr>
+      <td style="text-align: right">13</td>
+      <td style="text-align: left">First published rev. is restored</td>
+      <td style="text-align: right">12</td>
+      <td style="text-align: left">published</td>
+      <td style="text-align: left">published</td>
+    </tr>
+  </tbody>
+</table></div>
+
+<p>This led me to set up the second rule that I applied when I was checking the <em>“from”</em> or the <em>“to” states</em> of a node revision: <strong><em>from state</em> should be fetched from the first history entry, <em>to state</em> should be fetched from the last history entry</strong> of a node revision.</p>
+
+<h3 id="removed-revisions">Removed revisions</h3>
+
+<p>I hope that it is obvious why it is a problem if revisions are deleted. Assume that only revision #4, #6 and #12 are available in the source. These are the only revisions which will be migrated by <code class="language-plaintext highlighter-rouge">d7_node_complete</code>. Just take a look at this history where I removed those history entries whose revision was deleted:</p>
+
+<div class="table-wrapper"><table>
+  <thead>
+    <tr>
+      <th style="text-align: right">#</th>
+      <th style="text-align: left">Action performed</th>
+      <th style="text-align: right">Rev. ID</th>
+      <th style="text-align: left">From</th>
+      <th style="text-align: left">To</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: right">4</td>
+      <td style="text-align: left">New draft</td>
+      <td style="text-align: right">4</td>
+      <td style="text-align: left">published</td>
+      <td style="text-align: left">draft</td>
+    </tr>
+    <tr>
+      <td style="text-align: right">6</td>
+      <td style="text-align: left">New draft sent to review</td>
+      <td style="text-align: right">6</td>
+      <td style="text-align: left">draft</td>
+      <td style="text-align: left">in_review</td>
+    </tr>
+    <tr>
+      <td style="text-align: right">8</td>
+      <td style="text-align: left">Reviewer sets back to draft on rev. UI</td>
+      <td style="text-align: right">6</td>
+      <td style="text-align: left">in_review</td>
+      <td style="text-align: left">draft</td>
+    </tr>
+    <tr>
+      <td style="text-align: right">13</td>
+      <td style="text-align: left">First published rev. is restored</td>
+      <td style="text-align: right">12</td>
+      <td style="text-align: left">published</td>
+      <td style="text-align: left">published</td>
+    </tr>
+  </tbody>
+</table></div>
+
+<p>How can we migrate these to the destination site by retaining the highest level of data integrity?</p>
+
+<p>We can see the connection between the two non-published revision<sup id="fnref:2" role="doc-noteref"><a href="#fn:2" class="footnote" rel="footnote">2</a></sup>. But how can we connect the last one’s <em>to state</em> with the last, published revision’s state? We cannot assume that there is a direct transition from <em>draft</em> to <em>published</em>!</p>
+
+<p>In such cases, the solution is a bit sad: <strong>If there is no connection</strong> between the <em>first</em> drafts and the <em>first</em> published version, then we ask <code class="language-plaintext highlighter-rouge">d7_node_complete</code> to <strong>skip migrating the <em>stale</em> drafts</strong>. This was the third rule.</p>
+
+<h3 id="unpublished-nodes-which-were-published-before">Unpublished nodes which were published before</h3>
+
+<p>I want to show another tricky example<sup id="fnref:3" role="doc-noteref"><a href="#fn:3" class="footnote" rel="footnote">3</a></sup>:</p>
+
+<div class="table-wrapper"><table>
+  <thead>
+    <tr>
+      <th style="text-align: right">#</th>
+      <th style="text-align: left">Action performed</th>
+      <th style="text-align: right">Rev. ID</th>
+      <th style="text-align: left">From</th>
+      <th style="text-align: left">To</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: right">1</td>
+      <td style="text-align: left">New draft sent to review</td>
+      <td style="text-align: right">1</td>
+      <td style="text-align: left"> </td>
+      <td style="text-align: left">in_review</td>
+    </tr>
+    <tr>
+      <td style="text-align: right">2</td>
+      <td style="text-align: left">Reviewer publishes</td>
+      <td style="text-align: right">2</td>
+      <td style="text-align: left">in_review</td>
+      <td style="text-align: left">published</td>
+    </tr>
+    <tr>
+      <td style="text-align: right">3</td>
+      <td style="text-align: left">New draft</td>
+      <td style="text-align: right">3</td>
+      <td style="text-align: left">published</td>
+      <td style="text-align: left">draft</td>
+    </tr>
+    <tr>
+      <td style="text-align: right">4</td>
+      <td style="text-align: left"><em>WBM clones rev #2</em></td>
+      <td style="text-align: right">4</td>
+      <td style="text-align: left">published</td>
+      <td style="text-align: left">published</td>
+    </tr>
+    <tr>
+      <td style="text-align: right">5</td>
+      <td style="text-align: left">Unpublished on revision UI</td>
+      <td style="text-align: right">4</td>
+      <td style="text-align: left">published</td>
+      <td style="text-align: left">draft</td>
+    </tr>
+  </tbody>
+</table></div>
+
+<p>We can migrate rev #1 and #2, but what should we do with #3 and #4? I obviously cannot drop #4 – although it was a clone initially, it became a real transition because this was the published revision which <em>archived</em> the whole content. And on the other hand, if I didn’t migrate it, then the node would be published in Drupal 9, because revision #2 was public, and #3 is only a new, pending revision.</p>
+
+<p>Well, I checked what happens on Drupal 9 if I repeat the same steps there, and there was a big relief: every single moderated content can be archived, even if it has a pending version.</p>
+
+<p>So this transition log migrated into Drupal 9 looks like this :</p>
+
+<div class="table-wrapper"><table>
+  <thead>
+    <tr>
+      <th style="text-align: right">#</th>
+      <th style="text-align: left">Action performed</th>
+      <th style="text-align: right">Rev. ID</th>
+      <th style="text-align: left">From</th>
+      <th style="text-align: left">To</th>
+      <th style="text-align: right">Public</th>
+      <th style="text-align: right">Default</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: right">1</td>
+      <td style="text-align: left">New draft sent to review</td>
+      <td style="text-align: right">1</td>
+      <td style="text-align: left"> </td>
+      <td style="text-align: left">in_review</td>
+      <td style="text-align: right">◯</td>
+      <td style="text-align: right">◉</td>
+    </tr>
+    <tr>
+      <td style="text-align: right">2</td>
+      <td style="text-align: left">Reviewer publishes</td>
+      <td style="text-align: right">2</td>
+      <td style="text-align: left">in_review</td>
+      <td style="text-align: left">published</td>
+      <td style="text-align: right">◉</td>
+      <td style="text-align: right">◉</td>
+    </tr>
+    <tr>
+      <td style="text-align: right">3</td>
+      <td style="text-align: left">New draft</td>
+      <td style="text-align: right">3</td>
+      <td style="text-align: left">published</td>
+      <td style="text-align: left">draft</td>
+      <td style="text-align: right">◯</td>
+      <td style="text-align: right">◯</td>
+    </tr>
+    <tr>
+      <td style="text-align: right">4</td>
+      <td style="text-align: left">Content unpublished</td>
+      <td style="text-align: right">4</td>
+      <td style="text-align: left">published</td>
+      <td style="text-align: left">archive</td>
+      <td style="text-align: right">◯</td>
+      <td style="text-align: right">◉</td>
+    </tr>
+  </tbody>
+</table></div>
+
+<hr>
+
+<p><em>Drupal core issues discovered</em>:</p>
+
+<ul>
+  <li>
+<a href="https://drupal.org/i/3200949#comment-14014993" target="_blank" rel="noopener noreferrer">#3200949-9</a>: Non-default entity revisions are migrated as default revision because EntityContentComplete does not allow creating forward (and non-default) revisions</li>
+  <li>
+<a href="https://drupal.org/i/3052115#comment-14296084" target="_blank" rel="noopener noreferrer">#3052115-32</a>: Mark an entity as ‘syncing’ during a migration ‘update’ and possibly test syncing semantics (no changed item bump, no content moderation revisions)</li>
+  <li>
+<a href="https://drupal.org/i/2329253#comment-14239586" target="_blank" rel="noopener noreferrer">#2329253-78</a>: Allow the ChangedItem to skip updating when synchronizing (f.e. when migrating)</li>
+</ul>
+
+<hr>
+
+<p><em>Footnotes</em>:</p>
+
+<div class="footnotes">
+  <ol>
+    <li id="fn:1" role="doc-footnote">
+      <p>In these cases, the moderation history table will still contain the history of the node, so we won’t have the revision data available. <a href="#fnref:1" class="reversefootnote" role="doc-backlink">↩</a></p>
+    </li>
+    <li id="fn:2" role="doc-footnote">
+      <p>Yes, there are <em>three</em> non-public table rows in the table, but two of them were recorded for the <em>same node revision ID</em>. <a href="#fnref:2" class="reversefootnote" role="doc-backlink">↩</a></p>
+    </li>
+    <li id="fn:3" role="doc-footnote">
+      <p>This represents the typical history entries of the nodes we got the incident notice from the customer about. <a href="#fnref:3" class="reversefootnote" role="doc-backlink">↩</a></p>
+    </li>
+  </ol>
+</div>
+
+    </div>
+<div class="tags rhythm-onehalf">
+        <strong>Tagged with:</strong>
+        
+        <a class="postmeta__item postmeta__item--tag label" href="https://huzooka.github.io/tag/drupal">Drupal</a>
+        
+        <a class="postmeta__item postmeta__item--tag label" href="https://huzooka.github.io/tag/migration">Migration</a>
+        
+        <a class="postmeta__item postmeta__item--tag label" href="https://huzooka.github.io/tag/workbench-moderation">Workbench Moderation</a>
+        
+        <a class="postmeta__item postmeta__item--tag label" href="https://huzooka.github.io/tag/workflows">Workflows</a>
+        
+    </div>
+<a class="u-url" href="/development/2021/11/14/workbench-moderation-migrate.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="footer h-card bg-dark">
+    <data class="u-url" href="/"></data>
+
+    <div class="wrapper">
+        <div class="footer__row">
+            <div class="footer__col footer__col--slogan">
+                <div class="slogan">
+                    <span class="logo slogan__logo"></span>
+                    <p class="slogan__slogan">The Github Page where I temporarily publish my professional posts</p>
+                </div>
+            </div>
+
+            <div class="footer__col">
+<ul class="menu-list font-heading">
+<li class="menu-list__item h4">
+        <a href="/about/">About</a>
+    </li>
+<li class="menu-list__item h4">
+        <a href="https://huzooka.github.io/tag/drupal">Drupal</a>
+    </li>
+<li class="menu-list__item h4">
+        <a href="https://huzooka.github.io/tag/migration">Migration</a>
+    </li>
+<li class="menu-list__item h4">
+        <a href="/feed.xml">RSS</a>
+    </li>
+</ul>
+</div>
+
+            <div class="footer__col">
+<ul class="menu-list font-heading">
+<li class="menu-list__item h4"><a href="https://drupal.org/u/huzooka" target="_blank" rel="noopener noreferrer">Drupal.org</a></li>
+<li class="menu-list__item h4"><a href="https://github.com/zolhorvath" target="_blank" rel="noopener noreferrer">Github</a></li>
+<li class="menu-list__item h4"><a href="https://www.linkedin.com/in/zoltan-attila-horvath" target="_blank" rel="noopener noreferrer">Linkedin</a></li>
+<li class="menu-list__item h4"><a href="https://www.twitter.com/huzooka" target="_blank" rel="noopener noreferrer">Twitter</a></li>
+</ul>
+</div>
+        </div>
+    </div>
+</footer>
+</body>
+
+</html>

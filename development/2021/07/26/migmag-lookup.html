@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Magical Migration Lookup Plugin | HuZooka</title>
+<meta name="generator" content="Jekyll v4.2.2">
+<meta property="og:title" content="The Magical Migration Lookup Plugin">
+<meta name="author" content="Zoltán Horváth">
+<meta property="og:locale" content="en_US">
+<meta name="description" content="The migration lookup plugin that creates migration stubs only for existing source IDs and is able to identify which migration should create the stub.">
+<meta property="og:description" content="The migration lookup plugin that creates migration stubs only for existing source IDs and is able to identify which migration should create the stub.">
+<link rel="canonical" href="https://huzooka.github.io/development/2021/07/26/migmag-lookup.html">
+<meta property="og:url" content="https://huzooka.github.io/development/2021/07/26/migmag-lookup.html">
+<meta property="og:site_name" content="HuZooka">
+<meta property="og:image" content="https://huzooka.github.io/simple.png">
+<meta property="og:type" content="article">
+<meta property="article:published_time" content="2021-07-26T23:58:51+00:00">
+<meta name="twitter:card" content="summary_large_image">
+<meta property="twitter:image" content="https://huzooka.github.io/simple.png">
+<meta property="twitter:title" content="The Magical Migration Lookup Plugin">
+<meta name="twitter:site" content="@huzooka">
+<meta name="twitter:creator" content="@huzooka">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Zoltán Horváth"},"dateModified":"2021-07-26T23:58:51+00:00","datePublished":"2021-07-26T23:58:51+00:00","description":"The migration lookup plugin that creates migration stubs only for existing source IDs and is able to identify which migration should create the stub.","headline":"The Magical Migration Lookup Plugin","image":"https://huzooka.github.io/simple.png","mainEntityOfPage":{"@type":"WebPage","@id":"https://huzooka.github.io/development/2021/07/26/migmag-lookup.html"},"url":"https://huzooka.github.io/development/2021/07/26/migmag-lookup.html"}</script>
+
+<link rel="stylesheet" href="/assets/main.css?f3f2fc8c">
+<link type="application/atom+xml" rel="alternate" href="https://huzooka.github.io/feed.xml" title="HuZooka">
+<link rel="icon" href="/favicon.ico?b6c405af" type="image/vnd.microsoft.icon">
+    <link rel="preload" href="/assets/texb-875-125.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+    <link rel="preload" href="/assets/charissilr.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+    <link rel="preload" href="/assets/charissilb.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+</head>
+<body>
+<header class="site-header">
+
+    <div class="wrapper">
+<a class="site-title h3" rel="author" href="/">
+            <span class="logo logo--header"></span>HuZooka
+        </a><nav class="site-nav">
+            <input type="checkbox" id="nav-trigger" class="nav-trigger">
+            <label for="nav-trigger" class="menu-icon">
+                <span class="menu-icon__bar"></span>
+                <span class="menu-icon__bar"></span>
+                <span class="menu-icon__bar"></span>
+            </label>
+
+            <div class="trigger">
+<a class="nav-link h5" href="/about/">About</a><a class="nav-link h5" href="https://huzooka.github.io/tag/drupal">Drupal</a><a class="nav-link h5" href="https://huzooka.github.io/tag/migration">Migration</a>
+</div>
+        </nav>
+</div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+    <header class="post-header">
+        <h1 class="post-title p-name" itemprop="name headline">The Magical Migration Lookup Plugin</h1>
+
+        <p class="postmeta">
+            <time class="dt-published" datetime="2021-07-26T23:58:51+00:00" itemprop="datePublished">July 26, 2021
+            </time>• <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span class="p-author h-card" itemprop="name">Zoltán Horváth</span></span></p>
+    </header>
+
+    <div class="post-content e-content rhythm-onehalf" itemprop="articleBody">
+        <p class="hl">This post is a copy of the <a href="https://www.drupal.org/docs/contributed-modules/migrate-magician/migrate-magician-process-plugins-110/migmaglookup" target="_blank" rel="noopener noreferrer">MigMagLookup documentation</a> on Drupal.org</p>
+
+<p class="lead"><a href="https://git.drupalcode.org/project/migmag/-/blob/1.1.x/migmag_process/src/Plugin/migrate/process/MigMagLookup.php#L105" target="_blank" rel="noopener noreferrer">MigMagLookup (<code class="language-plaintext highlighter-rouge">migmag_lookup</code>)</a> is a Drupal core compatible migration lookup plugin which creates migration stubs only for existing source IDs, and which is able to identify which migration should create the stub entity.</p>
+
+<h2 id="why-might-you-need-this-plugin">Why might you need this plugin?</h2>
+
+<p>Drupal core’s <a href="https://www.drupal.org/docs/contributed-modules/migrate-magician/migrate-magician-process-plugins-110/migmaglookup#:~:text=Drupal%20core%27s%20migration_lookup" target="_blank" rel="noopener noreferrer"><code class="language-plaintext highlighter-rouge">migration_lookup</code> migrate process plugin</a> has some limitations in regard of content stubbing which cannot be worked around (imho):</p>
+
+<ul>
+  <li>Core’s <code class="language-plaintext highlighter-rouge">MigrationLookup</code> is not able to identify which migration contains a source record (row) with the matching IDs.</li>
+  <li>Because of this, it creates stubs entities with the wrong migrations – for example in the current migration. Or, if the current migration isn’t specified in the given lookup migrations configuration, then in the first lookup migration.</li>
+  <li>The plugin <a href="https://www.drupal.org/project/drupal/issues/3156730" target="_blank" rel="noopener noreferrer">might create stubs which aren’t represented in the lookup migration(s) source</a> (we call them “invalid stubs”). These stubs can’t ever be updated, because they don’t exist in the source data.</li>
+  <li>The plugin cannot create stubs from partial (not fully specified) source row IDs</li>
+  <li>You cannot pass destination property values to the migrate stub service, although it would be able to handle them appropriately.</li>
+</ul>
+
+<p>However, <a href="https://git.drupalcode.org/project/migmag/-/blob/1.1.x/migmag_process/src/Plugin/migrate/process/MigMagLookup.php" target="_blank" rel="noopener noreferrer">MigMagLookup</a> overcomes the limitations above:</p>
+
+<ul>
+  <li>
+<em>MigMagLookup</em> is able to identify which migrations may contain the row specified with the source plugin IDs.</li>
+  <li>Because of this, it is able to create stubs in the <strong>right</strong> migrations. If the row specified with its source IDs can be found in more lookup migrations, then it creates stubs for every matching source record…</li>
+  <li>…so it creates only valid stubs.</li>
+  <li>Stub creation only fails if the underlying migration plugin instance makes it to fail, because it invokes <code class="language-plaintext highlighter-rouge">SourcePluginInterface::prepareRow()</code>
+</li>
+  <li>From version <code class="language-plaintext highlighter-rouge">1.2.0</code>, you <strong>can</strong> pass destination property values to the migrate stub service with the <code class="language-plaintext highlighter-rouge">stub_default_values</code> configuration. The configuration is an array of row properties, keyed by the stub migration’s destination properties. Row properties are fetched from the host migration’s row.</li>
+  <li>And the best one: it is able to create stubs based on not-fully-specified source row IDs. If you need the destination ID of a node (e.g. referenced from an entity reference field), you only have to use the information you have from the original field value: the ID of the source node. You don’t have to worry about how to get a revision ID (or a language code) if you are looking for only the migrated node’s ID.</li>
+</ul>
+
+<p>If you specify the stub migration ID (which should store the stub) with the <code class="language-plaintext highlighter-rouge">stub_id</code> configuration key, then the original behavior is kept, so if you’re unlucky (or you want to do so), you might have invalid stubs.</p>
+
+<p>If you want to create invalid stubs only when none of the provided lookup migrations contain the specified source record, you should specify the fallback stub migration’s plugin ID with the <code class="language-plaintext highlighter-rouge">fallback_stub_id</code> configuration key.</p>
+
+<p>Some <a href="https://www.drupal.org/docs/contributed-modules/migrate-magician/migrate-magician-process-plugins-110/migmaglookup#s-examples" target="_blank" rel="noopener noreferrer">usage examples can be found on the documentation page</a>.</p>
+
+    </div>
+<div class="tags rhythm-onehalf">
+        <strong>Tagged with:</strong>
+        
+        <a class="postmeta__item postmeta__item--tag label" href="https://huzooka.github.io/tag/drupal">Drupal</a>
+        
+        <a class="postmeta__item postmeta__item--tag label" href="https://huzooka.github.io/tag/migration">Migration</a>
+        
+        <a class="postmeta__item postmeta__item--tag label" href="https://huzooka.github.io/tag/migration-lookup">Migration Lookup</a>
+        
+    </div>
+<a class="u-url" href="/development/2021/07/26/migmag-lookup.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="footer h-card bg-dark">
+    <data class="u-url" href="/"></data>
+
+    <div class="wrapper">
+        <div class="footer__row">
+            <div class="footer__col footer__col--slogan">
+                <div class="slogan">
+                    <span class="logo slogan__logo"></span>
+                    <p class="slogan__slogan">The Github Page where I temporarily publish my professional posts</p>
+                </div>
+            </div>
+
+            <div class="footer__col">
+<ul class="menu-list font-heading">
+<li class="menu-list__item h4">
+        <a href="/about/">About</a>
+    </li>
+<li class="menu-list__item h4">
+        <a href="https://huzooka.github.io/tag/drupal">Drupal</a>
+    </li>
+<li class="menu-list__item h4">
+        <a href="https://huzooka.github.io/tag/migration">Migration</a>
+    </li>
+<li class="menu-list__item h4">
+        <a href="/feed.xml">RSS</a>
+    </li>
+</ul>
+</div>
+
+            <div class="footer__col">
+<ul class="menu-list font-heading">
+<li class="menu-list__item h4"><a href="https://drupal.org/u/huzooka" target="_blank" rel="noopener noreferrer">Drupal.org</a></li>
+<li class="menu-list__item h4"><a href="https://github.com/zolhorvath" target="_blank" rel="noopener noreferrer">Github</a></li>
+<li class="menu-list__item h4"><a href="https://www.linkedin.com/in/zoltan-attila-horvath" target="_blank" rel="noopener noreferrer">Linkedin</a></li>
+<li class="menu-list__item h4"><a href="https://www.twitter.com/huzooka" target="_blank" rel="noopener noreferrer">Twitter</a></li>
+</ul>
+</div>
+        </div>
+    </div>
+</footer>
+</body>
+
+</html>

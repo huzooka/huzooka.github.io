@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lessons I Learned While Developing Location Migration | HuZooka</title>
+<meta name="generator" content="Jekyll v4.2.2">
+<meta property="og:title" content="Lessons I Learned While Developing Location Migration">
+<meta name="author" content="Zoltán Horváth">
+<meta property="og:locale" content="en_US">
+<meta name="description" content="Mistakes I made and which you can avoid now.">
+<meta property="og:description" content="Mistakes I made and which you can avoid now.">
+<link rel="canonical" href="https://huzooka.github.io/development/2020/10/11/location-migration.html">
+<meta property="og:url" content="https://huzooka.github.io/development/2020/10/11/location-migration.html">
+<meta property="og:site_name" content="HuZooka">
+<meta property="og:image" content="https://huzooka.github.io/simple.png">
+<meta property="og:type" content="article">
+<meta property="article:published_time" content="2020-10-11T20:53:40+00:00">
+<meta name="twitter:card" content="summary_large_image">
+<meta property="twitter:image" content="https://huzooka.github.io/simple.png">
+<meta property="twitter:title" content="Lessons I Learned While Developing Location Migration">
+<meta name="twitter:site" content="@huzooka">
+<meta name="twitter:creator" content="@huzooka">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Zoltán Horváth"},"dateModified":"2020-10-11T20:53:40+00:00","datePublished":"2020-10-11T20:53:40+00:00","description":"Mistakes I made and which you can avoid now.","headline":"Lessons I Learned While Developing Location Migration","image":"https://huzooka.github.io/simple.png","mainEntityOfPage":{"@type":"WebPage","@id":"https://huzooka.github.io/development/2020/10/11/location-migration.html"},"url":"https://huzooka.github.io/development/2020/10/11/location-migration.html"}</script>
+
+<link rel="stylesheet" href="/assets/main.css?f3f2fc8c">
+<link type="application/atom+xml" rel="alternate" href="https://huzooka.github.io/feed.xml" title="HuZooka">
+<link rel="icon" href="/favicon.ico?b6c405af" type="image/vnd.microsoft.icon">
+    <link rel="preload" href="/assets/texb-875-125.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+    <link rel="preload" href="/assets/charissilr.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+    <link rel="preload" href="/assets/charissilb.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+</head>
+<body>
+<header class="site-header">
+
+    <div class="wrapper">
+<a class="site-title h3" rel="author" href="/">
+            <span class="logo logo--header"></span>HuZooka
+        </a><nav class="site-nav">
+            <input type="checkbox" id="nav-trigger" class="nav-trigger">
+            <label for="nav-trigger" class="menu-icon">
+                <span class="menu-icon__bar"></span>
+                <span class="menu-icon__bar"></span>
+                <span class="menu-icon__bar"></span>
+            </label>
+
+            <div class="trigger">
+<a class="nav-link h5" href="/about/">About</a><a class="nav-link h5" href="https://huzooka.github.io/tag/drupal">Drupal</a><a class="nav-link h5" href="https://huzooka.github.io/tag/migration">Migration</a>
+</div>
+        </nav>
+</div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+    <header class="post-header">
+        <h1 class="post-title p-name" itemprop="name headline">Lessons I Learned While Developing Location Migration</h1>
+
+        <p class="postmeta">
+            <time class="dt-published" datetime="2020-10-11T20:53:40+00:00" itemprop="datePublished">October 11, 2020
+            </time>• <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span class="p-author h-card" itemprop="name">Zoltán Horváth</span></span></p>
+    </header>
+
+    <div class="post-content e-content rhythm-onehalf" itemprop="articleBody">
+        <p class="lead">The Drupal 7 Location module allows users to store locations in a location field (<code class="language-plaintext highlighter-rouge">location_cck</code> submodule), and also directly for <code class="language-plaintext highlighter-rouge">node</code>, <code class="language-plaintext highlighter-rouge">taxonomy_term</code> and <code class="language-plaintext highlighter-rouge">user</code> entities (with <code class="language-plaintext highlighter-rouge">location_node</code>, <code class="language-plaintext highlighter-rouge">location_taxonomy</code> and <code class="language-plaintext highlighter-rouge">location_user</code> submodules). And it does not have a Drupal 8+ release: maintainers decided<sup id="fnref:1" role="doc-noteref"><a href="#fn:1" class="footnote" rel="footnote">1</a></sup> that their users should use address, email and link fields on the most recent core version.</p>
+
+<p>Since it seemed that some customers needed this upgrade path, Acquia decided to found the development of <a href="https://drupal.org/project/location_migration" target="_blank" rel="noopener noreferrer">Location Migration</a>. I learned a lot during the development work. 🙂</p>
+
+<h2 id="if-you-have-to-migrate-a-single-field-type-into-multiple-types-of-fields-you-are-alone">If you have to migrate a single field type into multiple types of fields, you are alone</h2>
+
+<p>The problem is that we have to migrate a single field with <code class="language-plaintext highlighter-rouge">location</code> type into <code class="language-plaintext highlighter-rouge">address</code>, <code class="language-plaintext highlighter-rouge">email</code>, <code class="language-plaintext highlighter-rouge">telephone</code> and <code class="language-plaintext highlighter-rouge">link</code> fields at the same time. And since this situation does not occur to the migrations in Drupal core, the upstream migrations aren’t extensible in such a way that would work for us. We have to write our own migrations, source and process plugins, and also take care about the location field values being added to the action migration row source properties.</p>
+
+<h2 id="trailing-commas-in-function-calls-are-only-allowed-in-php-73">Trailing commas in function calls are only allowed in PHP 7.3+</h2>
+
+<p>I made a small mistake while setting up my IDE: I set the PHP level to <code class="language-plaintext highlighter-rouge">7.3</code> while Drupal 8 is still supported. And the <a href="https://www.drupal.org/docs/system-requirements/php-requirements" target="_blank" rel="noopener noreferrer">minimum PHP version required by Drupal 8 is 7.0.8</a>. So if you are the maintainer of a contrib module, and you <em>do</em> care about your users, please make sure that your language level config is set on the lowest PHP version of the Drupal core versions you aim to support. (Even if that version of PHP hasn’t been supported for years.)</p>
+
+<h2 id="sqlite-is-different-from-mysql-mariadb-or-postgresql">SQLite is Different from MySQL, MariaDB or PostgreSQL</h2>
+
+<p>I ran into this issue on SQLite: <a href="https://drupal.org/i/3175820" target="_blank" rel="noopener noreferrer">Empty location detection goes wrong with SQLite source databases</a>. This happened because I wasn’t fully aware of how <a href="https://www.sqlite.org/datatype3.html#type_affinity" target="_blank" rel="noopener noreferrer">SQLite’s type affinity</a> works in conjunction with Drupal.</p>
+
+<p>Well, it does not strictly follow the schema definition: <a href="https://git.drupalcode.org/project/location/-/blob/7.x-3.x/location.install#L102-L109" target="_blank" rel="noopener noreferrer">if we store this default value</a>, any other DB backend stores it as <code class="language-plaintext highlighter-rouge">0.000000</code>, so with 6 digits to the right of the decimal point. But SQLite tries to be a bit smarter: it stores only <code class="language-plaintext highlighter-rouge">0.0</code>, exactly the same value that the data schema defines.</p>
+
+<hr>
+
+<p><em>Edit on February 17, 2021</em>:</p>
+
+<h2 id="the-merge-word-in-migrationinterfacemergeprocessofproperty-refers-to-nestedarraymergedeeparray-not-array_merge">The “merge” word in <code class="language-plaintext highlighter-rouge">MigrationInterface::mergeProcessOfProperty()</code> refers to <code class="language-plaintext highlighter-rouge">NestedArray::mergeDeepArray()</code>, not <code class="language-plaintext highlighter-rouge">array_merge()</code>
+</h2>
+
+<p>A yet another lesson from Wim Leers:</p>
+
+<blockquote>
+  <p><code class="language-plaintext highlighter-rouge">\Drupal\location_migration\Plugin\migrate\field\Location::alterFieldInstanceMigration()</code> does this:</p>
+  <div class="language-php highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr>
+<td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+</pre></td>
+<td class="rouge-code"><pre>  <span class="cd">/**
+   * {@inheritdoc}
+   */</span>
+  <span class="k">public</span> <span class="k">function</span> <span class="n">alterFieldInstanceMigration</span><span class="p">(</span><span class="kt">MigrationInterface</span> <span class="nv">$migration</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">parent</span><span class="o">::</span><span class="nf">alterFieldInstanceMigration</span><span class="p">(</span><span class="nv">$migration</span><span class="p">);</span>
+    <span class="nv">$migration</span><span class="o">-&gt;</span><span class="nf">mergeProcessOfProperty</span><span class="p">(</span><span class="s1">'settings'</span><span class="p">,</span> <span class="p">[</span>
+      <span class="s1">'plugin'</span> <span class="o">=&gt;</span> <span class="s1">'location_to_address_field_settings'</span><span class="p">,</span>
+    <span class="p">]);</span>
+  <span class="p">}</span>
+</pre></td>
+</tr></tbody></table></code></pre></div>  </div>
+  <p>But <code class="language-plaintext highlighter-rouge">\Drupal\migrate\Plugin\Migration::mergeProcessOfProperty()</code> uses <code class="language-plaintext highlighter-rouge">NestedArray::mergeDeepArray()</code>, which causes [field settings being lost].</p>
+</blockquote>
+
+<p>What happens under the hood is that the new process being merged is converted to an array of migrate process configurations (so <code class="language-plaintext highlighter-rouge">['plugin' =&gt; 'foo']</code> is normalized to <code class="language-plaintext highlighter-rouge">[['plugin' =&gt; 'foo']]</code>, and since its key is <code class="language-plaintext highlighter-rouge">0</code>, the migrate plugin replaces the first migrate process configuration of the <code class="language-plaintext highlighter-rouge">settings</code> destination property with <code class="language-plaintext highlighter-rouge">['plugin' =&gt; 'foo']</code>. And this is why every other migrated field instance loses their settings.</p>
+
+<p>I expected this to happen:</p>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr>
+<td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+</pre></td>
+<td class="rouge-code"><pre><span class="p">[</span>
+  <span class="p">[</span>
+    <span class="s1">'plugin'</span> <span class="o">=&gt;</span> <span class="s1">'the original plugin'</span><span class="p">,</span>
+    <span class="s1">'and its'</span> <span class="o">=&gt;</span> <span class="s1">'config'</span><span class="p">,</span>
+    <span class="s1">'I want'</span> <span class="o">=&gt;</span> <span class="s1">'to keep'</span><span class="p">,</span>
+  <span class="p">],</span>
+  <span class="p">[</span>
+    <span class="s1">'plugin'</span> <span class="o">=&gt;</span> <span class="s1">'location_to_address_field_settings'</span><span class="p">,</span>
+  <span class="p">],</span>
+<span class="p">]</span>
+</pre></td>
+</tr></tbody></table></code></pre></div></div>
+
+<p>But I did this actually:</p>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr>
+<td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+</pre></td>
+<td class="rouge-code"><pre><span class="p">[</span>
+  <span class="p">[</span>
+    <span class="s1">'plugin'</span> <span class="o">=&gt;</span> <span class="s1">'location_to_address_field_settings'</span><span class="p">,</span>
+  <span class="p">],</span>
+<span class="p">]</span>
+</pre></td>
+</tr></tbody></table></code></pre></div></div>
+
+<p>One of the possible solutions is to use an explicit string array key:</p>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr>
+<td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+</pre></td>
+<td class="rouge-code"><pre><span class="cd">/**
+ * {@inheritdoc}
+ */</span>
+<span class="k">public</span> <span class="k">function</span> <span class="n">alterFieldInstanceMigration</span><span class="p">(</span><span class="kt">MigrationInterface</span> <span class="nv">$migration</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">parent</span><span class="o">::</span><span class="nf">alterFieldInstanceMigration</span><span class="p">(</span><span class="nv">$migration</span><span class="p">);</span>
+  <span class="nv">$migration</span><span class="o">-&gt;</span><span class="nf">mergeProcessOfProperty</span><span class="p">(</span><span class="s1">'settings'</span><span class="p">,</span> <span class="p">[</span>
+    <span class="s1">'a string key'</span> <span class="o">=&gt;</span> <span class="p">[</span>
+      <span class="s1">'plugin'</span> <span class="o">=&gt;</span> <span class="s1">'location_to_address_field_settings'</span><span class="p">,</span>
+    <span class="p">],</span>
+  <span class="p">]);</span>
+<span class="p">}</span>
+</pre></td>
+</tr></tbody></table></code></pre></div></div>
+
+<p>But I committed this:</p>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr>
+<td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+</pre></td>
+<td class="rouge-code"><pre><span class="cd">/**
+ * {@inheritdoc}
+ */</span>
+<span class="k">public</span> <span class="k">function</span> <span class="n">alterFieldInstanceMigration</span><span class="p">(</span><span class="kt">MigrationInterface</span> <span class="nv">$migration</span><span class="p">)</span> <span class="p">{</span>
+  <span class="k">parent</span><span class="o">::</span><span class="nf">alterFieldInstanceMigration</span><span class="p">(</span><span class="nv">$migration</span><span class="p">);</span>
+
+  <span class="nv">$current_process</span> <span class="o">=</span> <span class="nv">$migration</span><span class="o">-&gt;</span><span class="nf">getProcess</span><span class="p">()[</span><span class="s1">'settings'</span><span class="p">]</span> <span class="o">??</span> <span class="p">[];</span>
+  <span class="nv">$current_process</span><span class="p">[]</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s1">'plugin'</span> <span class="o">=&gt;</span> <span class="s1">'location_to_address_field_settings'</span><span class="p">,</span>
+  <span class="p">];</span>
+
+  <span class="nv">$migration</span><span class="o">-&gt;</span><span class="nf">setProcessOfProperty</span><span class="p">(</span><span class="s1">'settings'</span><span class="p">,</span> <span class="nv">$current_process</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></td>
+</tr></tbody></table></code></pre></div></div>
+
+<hr>
+
+<p class="footnotes"><em>Footnotes</em>:</p>
+
+<div class="footnotes">
+  <ol>
+    <li id="fn:1" role="doc-footnote">
+      <p>I don’t blame them at all! On the contrary: I think it’s a <em>lot smarter to join efforts</em>! <a href="#fnref:1" class="reversefootnote" role="doc-backlink">↩</a></p>
+    </li>
+  </ol>
+</div>
+
+    </div>
+<div class="tags rhythm-onehalf">
+        <strong>Tagged with:</strong>
+        
+        <a class="postmeta__item postmeta__item--tag label" href="https://huzooka.github.io/tag/drupal">Drupal</a>
+        
+        <a class="postmeta__item postmeta__item--tag label" href="https://huzooka.github.io/tag/migration">Migration</a>
+        
+        <a class="postmeta__item postmeta__item--tag label" href="https://huzooka.github.io/tag/situation-report">Situation report</a>
+        
+    </div>
+<a class="u-url" href="/development/2020/10/11/location-migration.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="footer h-card bg-dark">
+    <data class="u-url" href="/"></data>
+
+    <div class="wrapper">
+        <div class="footer__row">
+            <div class="footer__col footer__col--slogan">
+                <div class="slogan">
+                    <span class="logo slogan__logo"></span>
+                    <p class="slogan__slogan">The Github Page where I temporarily publish my professional posts</p>
+                </div>
+            </div>
+
+            <div class="footer__col">
+<ul class="menu-list font-heading">
+<li class="menu-list__item h4">
+        <a href="/about/">About</a>
+    </li>
+<li class="menu-list__item h4">
+        <a href="https://huzooka.github.io/tag/drupal">Drupal</a>
+    </li>
+<li class="menu-list__item h4">
+        <a href="https://huzooka.github.io/tag/migration">Migration</a>
+    </li>
+<li class="menu-list__item h4">
+        <a href="/feed.xml">RSS</a>
+    </li>
+</ul>
+</div>
+
+            <div class="footer__col">
+<ul class="menu-list font-heading">
+<li class="menu-list__item h4"><a href="https://drupal.org/u/huzooka" target="_blank" rel="noopener noreferrer">Drupal.org</a></li>
+<li class="menu-list__item h4"><a href="https://github.com/zolhorvath" target="_blank" rel="noopener noreferrer">Github</a></li>
+<li class="menu-list__item h4"><a href="https://www.linkedin.com/in/zoltan-attila-horvath" target="_blank" rel="noopener noreferrer">Linkedin</a></li>
+<li class="menu-list__item h4"><a href="https://www.twitter.com/huzooka" target="_blank" rel="noopener noreferrer">Twitter</a></li>
+</ul>
+</div>
+        </div>
+    </div>
+</footer>
+</body>
+
+</html>

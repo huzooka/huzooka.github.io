@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How I upgraded to Drupal 9.0.0-alpha1 | HuZooka</title>
+<meta name="generator" content="Jekyll v4.2.2">
+<meta property="og:title" content="How I upgraded to Drupal 9.0.0-alpha1">
+<meta name="author" content="Zoltán Horváth">
+<meta property="og:locale" content="en_US">
+<meta name="description" content="Typical issues I ran into and how I solved them temporarily.">
+<meta property="og:description" content="Typical issues I ran into and how I solved them temporarily.">
+<link rel="canonical" href="https://huzooka.github.io/development/2020/02/16/drupal9-alpha1.html">
+<meta property="og:url" content="https://huzooka.github.io/development/2020/02/16/drupal9-alpha1.html">
+<meta property="og:site_name" content="HuZooka">
+<meta property="og:image" content="https://huzooka.github.io/simple.png">
+<meta property="og:type" content="article">
+<meta property="article:published_time" content="2020-02-16T21:28:22+00:00">
+<meta name="twitter:card" content="summary_large_image">
+<meta property="twitter:image" content="https://huzooka.github.io/simple.png">
+<meta property="twitter:title" content="How I upgraded to Drupal 9.0.0-alpha1">
+<meta name="twitter:site" content="@huzooka">
+<meta name="twitter:creator" content="@huzooka">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Zoltán Horváth"},"dateModified":"2020-02-16T21:28:22+00:00","datePublished":"2020-02-16T21:28:22+00:00","description":"Typical issues I ran into and how I solved them temporarily.","headline":"How I upgraded to Drupal 9.0.0-alpha1","image":"https://huzooka.github.io/simple.png","mainEntityOfPage":{"@type":"WebPage","@id":"https://huzooka.github.io/development/2020/02/16/drupal9-alpha1.html"},"url":"https://huzooka.github.io/development/2020/02/16/drupal9-alpha1.html"}</script>
+
+<link rel="stylesheet" href="/assets/main.css?f3f2fc8c">
+<link type="application/atom+xml" rel="alternate" href="https://huzooka.github.io/feed.xml" title="HuZooka">
+<link rel="icon" href="/favicon.ico?b6c405af" type="image/vnd.microsoft.icon">
+    <link rel="preload" href="/assets/texb-875-125.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+    <link rel="preload" href="/assets/charissilr.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+    <link rel="preload" href="/assets/charissilb.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+</head>
+<body>
+<header class="site-header">
+
+    <div class="wrapper">
+<a class="site-title h3" rel="author" href="/">
+            <span class="logo logo--header"></span>HuZooka
+        </a><nav class="site-nav">
+            <input type="checkbox" id="nav-trigger" class="nav-trigger">
+            <label for="nav-trigger" class="menu-icon">
+                <span class="menu-icon__bar"></span>
+                <span class="menu-icon__bar"></span>
+                <span class="menu-icon__bar"></span>
+            </label>
+
+            <div class="trigger">
+<a class="nav-link h5" href="/about/">About</a><a class="nav-link h5" href="https://huzooka.github.io/tag/drupal">Drupal</a><a class="nav-link h5" href="https://huzooka.github.io/tag/migration">Migration</a>
+</div>
+        </nav>
+</div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+    <header class="post-header">
+        <h1 class="post-title p-name" itemprop="name headline">How I upgraded to Drupal 9.0.0-alpha1</h1>
+
+        <p class="postmeta">
+            <time class="dt-published" datetime="2020-02-16T21:28:22+00:00" itemprop="datePublished">February 16, 2020
+            </time>• <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span class="p-author h-card" itemprop="name">Zoltán Horváth</span></span></p>
+    </header>
+
+    <div class="post-content e-content rhythm-onehalf" itemprop="articleBody">
+        <p class="lead"><a href="https://matthewgrasmick.com/posts/screencast-updating-drupal-9-15-minutes" target="_blank" rel="noopener noreferrer">Matthew Grasmick’s screencast about upgrading to Drupal 9</a> made me think it would be really fascinating if I also upgraded my site to Drupal 9 by keeping all the functionalities, including all the contributed extensions this site uses. No surprises – it took me more than 15 minutes 😶. And now, I’ll tell you, why.</p>
+
+<p>This post is a list of the modules affected by the BC features removed from Drupal 9-alpha1, grouped by the change records.</p>
+
+<h2 id="core-version-requirement-key-in-infoyml-files"><a href="https://www.drupal.org/node/3070687" target="_blank" rel="noopener noreferrer">Core version requirement key in <code class="language-plaintext highlighter-rouge">info.yml</code> files</a></h2>
+
+<ul>
+  <li>Admin Toolbar (including submodules admin_toolbar_links_access_filter and admin_toolbar_tools)</li>
+  <li>Adminimal Admin Toolbar</li>
+  <li>Adminimal Theme</li>
+  <li>AdvAgg</li>
+  <li>Bootstrap (8.x-3.x)</li>
+  <li>CAPTCHA</li>
+  <li>Codesnippet</li>
+  <li>CodeTag</li>
+  <li>Config Ignore</li>
+  <li>Configuration Rewrite</li>
+</ul>
+
+<h2 id="deprecated-unmanaged-file-functions-replaced-with-a-service"><a href="https://www.drupal.org/node/3006851" target="_blank" rel="noopener noreferrer">Deprecated unmanaged file functions replaced with a service</a></h2>
+
+<p>These functions are: <code class="language-plaintext highlighter-rouge">file_prepare_directory()</code>, <code class="language-plaintext highlighter-rouge">file_unmanaged_copy()</code>, <code class="language-plaintext highlighter-rouge">file_unmanaged_move()</code>, <code class="language-plaintext highlighter-rouge">file_unmanaged_save_data()</code>,  <code class="language-plaintext highlighter-rouge">file_unmanaged_delete()</code> etc.</p>
+
+<ul>
+  <li>AdvAgg</li>
+  <li>Bootstrap (8.x-3.x)</li>
+  <li>Configuration Rewrite</li>
+</ul>
+
+<h2 id="several-file-urischeme-functions-deprecated-and-moved-to-drupalcorestreamwrapperstreamwrappermanagerinterface"><a href="https://www.drupal.org/node/3035273" target="_blank" rel="noopener noreferrer">Several file URI/scheme functions deprecated and moved to <code class="language-plaintext highlighter-rouge">\Drupal\Core\StreamWrapper\StreamWrapperManagerInterface</code></a></h2>
+<ul>
+  <li>AdvAgg</li>
+</ul>
+
+<h2 id="use-mb_-functions-instead-of-unicode-methods"><a href="https://www.drupal.org/node/2850048" target="_blank" rel="noopener noreferrer">Use <code class="language-plaintext highlighter-rouge">mb_*</code> functions instead of <code class="language-plaintext highlighter-rouge">Unicode::*</code> methods</a></h2>
+<ul>
+  <li>Bootstrap (8.x-3.x)</li>
+</ul>
+
+<h2 id="drupal_get_message-and-drupal_set_message-replaced-by-messenger-service"><a href="https://www.drupal.org/node/2774931" target="_blank" rel="noopener noreferrer"><code class="language-plaintext highlighter-rouge">drupal_get_message()</code> and <code class="language-plaintext highlighter-rouge">drupal_set_message()</code> replaced by Messenger service</a></h2>
+
+<ul>
+  <li>Bootstrap (8.x-3.x)</li>
+  <li>EntityManager has been split into 11 classes</li>
+  <li>Codesnippet</li>
+</ul>
+
+<h2 id="other-issues">Other Issues</h2>
+
+<ol>
+  <li>The Crop API module has a condition in its <code class="language-plaintext highlighter-rouge">hook_requirements()</code> implementation which assumes that the module is installed to Drupal core ^8 – and it only checks the minor version of the actual core.</li>
+</ol>
+
+<p>So I had to apply this patch:</p>
+
+<div class="language-diff highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr>
+<td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+</pre></td>
+<td class="rouge-code"><pre>   diff --git a/crop.install b/crop.install
+   index 9d4fa79..771b801 100644
+   --- a/crop.install
+   +++ b/crop.install
+   @@ -18,7 +18,7 @@ function crop_requirements($phase) {
+   // media_entity 1.x enabled.
+   $incompatible = FALSE;
+   $drupal_version = explode('.', \Drupal::VERSION);
+   -  if ($drupal_version[1] &lt; 4) {
+   +  if ($drupal_version[0] === 8 &amp;&amp; $drupal_version[1] &lt; 4) {
+      $incompatible = TRUE;
+      }
+      elseif (\Drupal::moduleHandler()-&gt;moduleExists('media_entity')) {
+</pre></td>
+</tr></tbody></table></code></pre></div></div>
+<ol>
+  <li>I also fixed something in the Paragraphs module’s ParagraphSelection handler.</li>
+</ol>
+
+    </div>
+<div class="tags rhythm-onehalf">
+        <strong>Tagged with:</strong>
+        
+        <a class="postmeta__item postmeta__item--tag label" href="https://huzooka.github.io/tag/drupal">Drupal</a>
+        
+        <a class="postmeta__item postmeta__item--tag label" href="https://huzooka.github.io/tag/drupal-9-compatibility">Drupal 9 compatibility</a>
+        
+    </div>
+<a class="u-url" href="/development/2020/02/16/drupal9-alpha1.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="footer h-card bg-dark">
+    <data class="u-url" href="/"></data>
+
+    <div class="wrapper">
+        <div class="footer__row">
+            <div class="footer__col footer__col--slogan">
+                <div class="slogan">
+                    <span class="logo slogan__logo"></span>
+                    <p class="slogan__slogan">The Github Page where I temporarily publish my professional posts</p>
+                </div>
+            </div>
+
+            <div class="footer__col">
+<ul class="menu-list font-heading">
+<li class="menu-list__item h4">
+        <a href="/about/">About</a>
+    </li>
+<li class="menu-list__item h4">
+        <a href="https://huzooka.github.io/tag/drupal">Drupal</a>
+    </li>
+<li class="menu-list__item h4">
+        <a href="https://huzooka.github.io/tag/migration">Migration</a>
+    </li>
+<li class="menu-list__item h4">
+        <a href="/feed.xml">RSS</a>
+    </li>
+</ul>
+</div>
+
+            <div class="footer__col">
+<ul class="menu-list font-heading">
+<li class="menu-list__item h4"><a href="https://drupal.org/u/huzooka" target="_blank" rel="noopener noreferrer">Drupal.org</a></li>
+<li class="menu-list__item h4"><a href="https://github.com/zolhorvath" target="_blank" rel="noopener noreferrer">Github</a></li>
+<li class="menu-list__item h4"><a href="https://www.linkedin.com/in/zoltan-attila-horvath" target="_blank" rel="noopener noreferrer">Linkedin</a></li>
+<li class="menu-list__item h4"><a href="https://www.twitter.com/huzooka" target="_blank" rel="noopener noreferrer">Twitter</a></li>
+</ul>
+</div>
+        </div>
+    </div>
+</footer>
+</body>
+
+</html>

@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fighting with the Browser Support of HTML5 Details in 2019 | HuZooka</title>
+<meta name="generator" content="Jekyll v4.2.2">
+<meta property="og:title" content="Fighting with the Browser Support of HTML5 Details in 2019">
+<meta name="author" content="Zoltán Horváth">
+<meta property="og:locale" content="en_US">
+<meta name="description" content="How to work around HTML5 details support issues.">
+<meta property="og:description" content="How to work around HTML5 details support issues.">
+<link rel="canonical" href="https://huzooka.github.io/development/2019/05/21/html-details.html">
+<meta property="og:url" content="https://huzooka.github.io/development/2019/05/21/html-details.html">
+<meta property="og:site_name" content="HuZooka">
+<meta property="og:image" content="https://huzooka.github.io/simple.png">
+<meta property="og:type" content="article">
+<meta property="article:published_time" content="2019-05-21T01:33:49+00:00">
+<meta name="twitter:card" content="summary_large_image">
+<meta property="twitter:image" content="https://huzooka.github.io/simple.png">
+<meta property="twitter:title" content="Fighting with the Browser Support of HTML5 Details in 2019">
+<meta name="twitter:site" content="@huzooka">
+<meta name="twitter:creator" content="@huzooka">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Zoltán Horváth"},"dateModified":"2019-05-21T01:33:49+00:00","datePublished":"2019-05-21T01:33:49+00:00","description":"How to work around HTML5 details support issues.","headline":"Fighting with the Browser Support of HTML5 Details in 2019","image":"https://huzooka.github.io/simple.png","mainEntityOfPage":{"@type":"WebPage","@id":"https://huzooka.github.io/development/2019/05/21/html-details.html"},"url":"https://huzooka.github.io/development/2019/05/21/html-details.html"}</script>
+
+<link rel="stylesheet" href="/assets/main.css?f3f2fc8c">
+<link type="application/atom+xml" rel="alternate" href="https://huzooka.github.io/feed.xml" title="HuZooka">
+<link rel="icon" href="/favicon.ico?b6c405af" type="image/vnd.microsoft.icon">
+    <link rel="preload" href="/assets/texb-875-125.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+    <link rel="preload" href="/assets/charissilr.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+    <link rel="preload" href="/assets/charissilb.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+</head>
+<body>
+<header class="site-header">
+
+    <div class="wrapper">
+<a class="site-title h3" rel="author" href="/">
+            <span class="logo logo--header"></span>HuZooka
+        </a><nav class="site-nav">
+            <input type="checkbox" id="nav-trigger" class="nav-trigger">
+            <label for="nav-trigger" class="menu-icon">
+                <span class="menu-icon__bar"></span>
+                <span class="menu-icon__bar"></span>
+                <span class="menu-icon__bar"></span>
+            </label>
+
+            <div class="trigger">
+<a class="nav-link h5" href="/about/">About</a><a class="nav-link h5" href="https://huzooka.github.io/tag/drupal">Drupal</a><a class="nav-link h5" href="https://huzooka.github.io/tag/migration">Migration</a>
+</div>
+        </nav>
+</div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+    <header class="post-header">
+        <h1 class="post-title p-name" itemprop="name headline">Fighting with the Browser Support of HTML5 Details in 2019</h1>
+
+        <p class="postmeta">
+            <time class="dt-published" datetime="2019-05-21T01:33:49+00:00" itemprop="datePublished">May 21, 2019
+            </time>• <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span class="p-author h-card" itemprop="name">Zoltán Horváth</span></span></p>
+    </header>
+
+    <div class="post-content e-content rhythm-onehalf" itemprop="articleBody">
+        <p class="lead">Drupal 8 makes theming of the HTML5 details element easy – thanks to its built-in shim provided by the <code class="language-plaintext highlighter-rouge">core/misc/collapse.js</code> script (that’s the part of the <code class="language-plaintext highlighter-rouge">core/drupal.collapse</code> library). But while working on <a href="https://www.drupal.org/project/claro/issues/3038784" target="_blank" rel="noopener noreferrer">Claro’s Details style update</a>, I discovered some bugs and other interesting behaviors that I want to share with you.</p>
+
+<h2 id="firefox-and-safari-on-macos">Firefox and Safari on macOS</h2>
+
+<p>Like buttons or links, <code class="language-plaintext highlighter-rouge">:focus</code> state of the HTML5 details summary element behaves differently on macOS or iOS than on other systems: it only gets the focus state if it was triggered by keyboard navigation.</p>
+
+<p>Does clicking on a <a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Element/button#Clicking_and_focus" target="_blank" rel="noopener noreferrer"><code class="language-plaintext highlighter-rouge">&lt;button&gt;</code></a> give it the focus?</p>
+
+<div class="table-wrapper"><table>
+  <thead>
+    <tr>
+      <th style="text-align: left">Desktop Browsers</th>
+      <th style="text-align: left">Windows 8.1</th>
+      <th style="text-align: left">OS X 10.X</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: left">Firefox</td>
+      <td style="text-align: left">Yes - Firefox 30.0</td>
+      <td style="text-align: left">No (nor with a tabindex) - Firefox 63</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">Chrome</td>
+      <td style="text-align: left">Yes - Chrome 35</td>
+      <td style="text-align: left">Yes - Chrome 65</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">Safari</td>
+      <td style="text-align: left">N/A</td>
+      <td style="text-align: left">No (nor with a tabindex) - Safari 12</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">Internet Explorer</td>
+      <td style="text-align: left">Yes - IE 11</td>
+      <td style="text-align: left">N/A</td>
+    </tr>
+    <tr>
+      <td style="text-align: left">Presto</td>
+      <td style="text-align: left">Yes - Opera 12</td>
+      <td style="text-align: left">Yes - Opera 12</td>
+    </tr>
+  </tbody>
+</table></div>
+
+<p>I decided to make that behavior coherent across browsers with a little Javascript:</p>
+
+<div class="language-js highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr>
+<td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+</pre></td>
+<td class="rouge-code"><pre><span class="p">((</span><span class="nx">$</span><span class="p">,</span> <span class="nx">Drupal</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="p">{</span>
+  <span class="nx">Drupal</span><span class="p">.</span><span class="nx">behaviors</span><span class="p">.</span><span class="nx">claroDetails</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="nx">attach</span><span class="p">(</span><span class="nx">context</span><span class="p">)</span> <span class="p">{</span>
+      <span class="nx">$</span><span class="p">(</span><span class="nx">context</span><span class="p">)</span>
+        <span class="p">.</span><span class="nx">once</span><span class="p">(</span><span class="dl">'</span><span class="s1">claroDetails</span><span class="dl">'</span><span class="p">)</span>
+        <span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="dl">'</span><span class="s1">click</span><span class="dl">'</span><span class="p">,</span> <span class="p">(</span><span class="nx">event</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="p">{</span>
+          <span class="k">if</span> <span class="p">(</span><span class="nx">event</span><span class="p">.</span><span class="nx">target</span><span class="p">.</span><span class="nx">nodeName</span> <span class="o">===</span> <span class="dl">'</span><span class="s1">SUMMARY</span><span class="dl">'</span><span class="p">)</span> <span class="p">{</span>
+            <span class="nx">$</span><span class="p">(</span><span class="nx">event</span><span class="p">.</span><span class="nx">target</span><span class="p">).</span><span class="nx">trigger</span><span class="p">(</span><span class="dl">'</span><span class="s1">focus</span><span class="dl">'</span><span class="p">);</span>
+          <span class="p">}</span>
+        <span class="p">});</span>
+    <span class="p">},</span>
+  <span class="p">};</span>
+<span class="p">})(</span><span class="nx">jQuery</span><span class="p">,</span> <span class="nx">Drupal</span><span class="p">);</span>
+</pre></td>
+</tr></tbody></table></code></pre></div></div>
+
+<h2 id="safari">Safari</h2>
+
+<p>On Safari, the custom marker’s animation does not work properly: <a href="http://chemerisuk.github.io/better-details-polyfill/" target="_blank" rel="noopener noreferrer">check out this demo page</a>.</p>
+
+<video controls="controls" width="640" height="480">
+  <source src="/files/video/Safari-details-summary-marker-animation-bug--480.mp4" type="video/mp4"></source>
+  &lt;source src="/files/video/Safari-details-summary-marker-animation-bug--480.webm "type="video/webm"&gt;
+</video>
+
+<p>I tried to work around this bug as well:</p>
+
+<div class="language-js highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr>
+<td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+</pre></td>
+<td class="rouge-code"><pre><span class="p">((</span><span class="nx">$</span><span class="p">,</span> <span class="nx">Drupal</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="p">{</span>
+  <span class="nx">Drupal</span><span class="p">.</span><span class="nx">behaviors</span><span class="p">.</span><span class="nx">claroDetailsSafariFix</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="nx">attach</span><span class="p">(</span><span class="nx">context</span><span class="p">)</span> <span class="p">{</span>
+      <span class="nx">$</span><span class="p">(</span><span class="nx">context</span><span class="p">)</span>
+        <span class="p">.</span><span class="nx">find</span><span class="p">(</span><span class="dl">'</span><span class="s1">details</span><span class="dl">'</span><span class="p">)</span>
+        <span class="p">.</span><span class="nx">once</span><span class="p">(</span><span class="dl">'</span><span class="s1">claroDetailsSafariFix</span><span class="dl">'</span><span class="p">)</span>
+        <span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="dl">'</span><span class="s1">toggle</span><span class="dl">'</span><span class="p">,</span> <span class="p">(</span><span class="nx">event</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="p">{</span>
+          <span class="k">if</span> <span class="p">(</span><span class="nx">$</span><span class="p">(</span><span class="nx">event</span><span class="p">.</span><span class="nx">target</span><span class="p">).</span><span class="nx">prop</span><span class="p">(</span><span class="dl">'</span><span class="s1">open</span><span class="dl">'</span><span class="p">))</span> <span class="p">{</span>
+            <span class="nx">$</span><span class="p">(</span><span class="nx">event</span><span class="p">.</span><span class="nx">target</span><span class="p">).</span><span class="nx">addClass</span><span class="p">(</span><span class="dl">'</span><span class="s1">is-expanded</span><span class="dl">'</span><span class="p">);</span>
+          <span class="p">}</span>
+          <span class="k">else</span> <span class="p">{</span>
+            <span class="nx">$</span><span class="p">(</span><span class="nx">event</span><span class="p">.</span><span class="nx">target</span><span class="p">).</span><span class="nx">removeClass</span><span class="p">(</span><span class="dl">'</span><span class="s1">is-expanded</span><span class="dl">'</span><span class="p">);</span>
+          <span class="p">}</span>
+        <span class="p">});</span>
+    <span class="p">},</span>
+  <span class="p">};</span>
+<span class="p">})(</span><span class="nx">jQuery</span><span class="p">,</span> <span class="nx">Drupal</span><span class="p">);</span>
+</pre></td>
+</tr></tbody></table></code></pre></div></div>
+
+<p>Well, it worked like a charm… But only for LTR languages! With an RTL document the final functionality was worse than without this script. No luck this time 🙁.</p>
+
+<h2 id="internet-explorer-11-and-edge">Internet Explorer 11 and Edge</h2>
+
+<p>Well, neither Internet Explorer 11 nor Microsoft Edge supports HTML5 details. But since Drupal uses details in many forms, it also <a href="https://git.drupalcode.org/project/drupal/blob/8.7.x/core/core.libraries.yml#L130" target="_blank" rel="noopener noreferrer">contains</a> a <a href="https://git.drupalcode.org/project/drupal/blob/8.7.x/core/misc/collapse.es6.js" target="_blank" rel="noopener noreferrer">built-in shim</a> which is <a href="https://git.drupalcode.org/project/drupal/blob/8.7.x/core/lib/Drupal/Core/Render/Element/Details.php#L80" target="_blank" rel="noopener noreferrer">added to Details</a> on non-supporting browsers.</p>
+
+<p>When we are customizing the <code class="language-plaintext highlighter-rouge">&lt;summary&gt;</code> styles, we only have to undo some of them if the parent of the <code class="language-plaintext highlighter-rouge">&lt;summary&gt;</code> tag has the <code class="language-plaintext highlighter-rouge">.collapse-processed</code> CSS class and repeat them for the <code class="language-plaintext highlighter-rouge">.details-title</code> anchor element that will be added into the summary.</p>
+
+<hr>
+
+<p><em>Sources</em>:</p>
+
+<ul>
+  <li>
+<a href="https://gist.github.com/cvrebert/68659d0333a578d75372" target="_blank" rel="noopener noreferrer">Click and focus behavior across browsers &amp; OSes gist</a> of Chris Rebert</li>
+  <li>
+<a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Element/button#Clicking_and_focus" target="_blank" rel="noopener noreferrer">MDN – &lt;button&gt;: The Button element</a>, Mozilla Developer Network</li>
+</ul>
+
+
+    </div>
+<div class="tags rhythm-onehalf">
+        <strong>Tagged with:</strong>
+        
+        <a class="postmeta__item postmeta__item--tag label" href="https://huzooka.github.io/tag/drupal">Drupal</a>
+        
+        <a class="postmeta__item postmeta__item--tag label" href="https://huzooka.github.io/tag/browser-support">Browser support</a>
+        
+    </div>
+<a class="u-url" href="/development/2019/05/21/html-details.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="footer h-card bg-dark">
+    <data class="u-url" href="/"></data>
+
+    <div class="wrapper">
+        <div class="footer__row">
+            <div class="footer__col footer__col--slogan">
+                <div class="slogan">
+                    <span class="logo slogan__logo"></span>
+                    <p class="slogan__slogan">The Github Page where I temporarily publish my professional posts</p>
+                </div>
+            </div>
+
+            <div class="footer__col">
+<ul class="menu-list font-heading">
+<li class="menu-list__item h4">
+        <a href="/about/">About</a>
+    </li>
+<li class="menu-list__item h4">
+        <a href="https://huzooka.github.io/tag/drupal">Drupal</a>
+    </li>
+<li class="menu-list__item h4">
+        <a href="https://huzooka.github.io/tag/migration">Migration</a>
+    </li>
+<li class="menu-list__item h4">
+        <a href="/feed.xml">RSS</a>
+    </li>
+</ul>
+</div>
+
+            <div class="footer__col">
+<ul class="menu-list font-heading">
+<li class="menu-list__item h4"><a href="https://drupal.org/u/huzooka" target="_blank" rel="noopener noreferrer">Drupal.org</a></li>
+<li class="menu-list__item h4"><a href="https://github.com/zolhorvath" target="_blank" rel="noopener noreferrer">Github</a></li>
+<li class="menu-list__item h4"><a href="https://www.linkedin.com/in/zoltan-attila-horvath" target="_blank" rel="noopener noreferrer">Linkedin</a></li>
+<li class="menu-list__item h4"><a href="https://www.twitter.com/huzooka" target="_blank" rel="noopener noreferrer">Twitter</a></li>
+</ul>
+</div>
+        </div>
+    </div>
+</footer>
+</body>
+
+</html>

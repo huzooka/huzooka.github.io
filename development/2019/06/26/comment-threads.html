@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>Space-saving Threaded Comment Design Concept | HuZooka</title>
+<meta name="generator" content="Jekyll v4.2.2">
+<meta property="og:title" content="Space-saving Threaded Comment Design Concept">
+<meta name="author" content="Zoltán Horváth">
+<meta property="og:locale" content="en_US">
+<meta name="description" content="How to save horizontal space when displaying indented comment threads.">
+<meta property="og:description" content="How to save horizontal space when displaying indented comment threads.">
+<link rel="canonical" href="https://huzooka.github.io/development/2019/06/26/comment-threads.html">
+<meta property="og:url" content="https://huzooka.github.io/development/2019/06/26/comment-threads.html">
+<meta property="og:site_name" content="HuZooka">
+<meta property="og:image" content="https://huzooka.github.io/simple.png">
+<meta property="og:type" content="article">
+<meta property="article:published_time" content="2019-06-26T12:55:28+00:00">
+<meta name="twitter:card" content="summary_large_image">
+<meta property="twitter:image" content="https://huzooka.github.io/simple.png">
+<meta property="twitter:title" content="Space-saving Threaded Comment Design Concept">
+<meta name="twitter:site" content="@huzooka">
+<meta name="twitter:creator" content="@huzooka">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Zoltán Horváth"},"dateModified":"2019-06-26T12:55:28+00:00","datePublished":"2019-06-26T12:55:28+00:00","description":"How to save horizontal space when displaying indented comment threads.","headline":"Space-saving Threaded Comment Design Concept","image":"https://huzooka.github.io/simple.png","mainEntityOfPage":{"@type":"WebPage","@id":"https://huzooka.github.io/development/2019/06/26/comment-threads.html"},"url":"https://huzooka.github.io/development/2019/06/26/comment-threads.html"}</script>
+
+<link rel="stylesheet" href="/assets/main.css?f3f2fc8c">
+<link type="application/atom+xml" rel="alternate" href="https://huzooka.github.io/feed.xml" title="HuZooka">
+<link rel="icon" href="/favicon.ico?b6c405af" type="image/vnd.microsoft.icon">
+    <link rel="preload" href="/assets/texb-875-125.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+    <link rel="preload" href="/assets/charissilr.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+    <link rel="preload" href="/assets/charissilb.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+</head>
+<body>
+<header class="site-header">
+
+    <div class="wrapper">
+<a class="site-title h3" rel="author" href="/">
+            <span class="logo logo--header"></span>HuZooka
+        </a><nav class="site-nav">
+            <input type="checkbox" id="nav-trigger" class="nav-trigger">
+            <label for="nav-trigger" class="menu-icon">
+                <span class="menu-icon__bar"></span>
+                <span class="menu-icon__bar"></span>
+                <span class="menu-icon__bar"></span>
+            </label>
+
+            <div class="trigger">
+<a class="nav-link h5" href="/about/">About</a><a class="nav-link h5" href="https://huzooka.github.io/tag/drupal">Drupal</a><a class="nav-link h5" href="https://huzooka.github.io/tag/migration">Migration</a>
+</div>
+        </nav>
+</div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+    <header class="post-header">
+        <h1 class="post-title p-name" itemprop="name headline">Space-saving Threaded Comment Design Concept</h1>
+
+        <p class="postmeta">
+            <time class="dt-published" datetime="2019-06-26T12:55:28+00:00" itemprop="datePublished">June 26, 2019
+            </time>• <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span class="p-author h-card" itemprop="name">Zoltán Horváth</span></span></p>
+    </header>
+
+    <div class="post-content e-content rhythm-onehalf" itemprop="articleBody">
+        <p class="lead">I think that choosing threaded comments for a social-like page is a good practice. If you choose Drupal’s built-in Comment module for providing the opportunity to comment on your articles, you can configure it to use threads. However, displaying threads at smaller window sizes, such as mobile phones, can be difficult. This article is about how to display threads in a compact, space-saving way.</p>
+
+<p>Previously I have defined the margin of the indentation not with absolute (<code class="language-plaintext highlighter-rouge">px</code> and even <code class="language-plaintext highlighter-rouge">em</code> or <code class="language-plaintext highlighter-rouge">rem</code> in this context), but with a parent-relative unit: for example with <code class="language-plaintext highlighter-rouge">margin-left: 10%;</code>. I was happy with this for years, and I still think that this is a good-enough solution. But after a little research I’ve found an even better way (that can be used on the top of the previous approach).</p>
+
+<h2 id="a-smarter-solution">A smarter solution</h2>
+
+<p>The concept is relatively difficult to explain with words (I won’t even try), but it is easy to demonstrate visually. There it is:</p>
+
+<p class="figure"><a href="/files/image/Comments--before-after.png" class="image-linker"><picture><source srcset="/files/image/Comments--before-after.webp" type="image/webp" media="all"><img src="/files/image/Comments--before-after.png" alt="UI suggestion for displaying threaded comments. On the left side: a comment thread displayed in the usual way. On the right side: the suggested, space-saving comment thread display solution." width="1480" height="1356" loading="lazy"></source></picture></a>
+UI suggestion for displaying threaded comments. On the left side: a comment thread displayed in the usual way. On the right side: the suggested, space-saving comment thread display solution.</p>
+
+<p>The essence is, instead of displaying the indentation unconditionally, we only make it visible if it is followed by a comment that belongs to a higher thread than the indentation of the comment it follows.</p>
+
+<hr>
+
+<p><em>Sources</em>:</p>
+
+<ul>
+  <li>
+<a href="https://elezea.com/2015/09/how-to-display-threaded-discussions-on-the-web/" target="_blank" rel="noopener noreferrer">How to display threaded discussions on the web</a> by Rian van der Merwe</li>
+  <li>
+<a href="https://ux.stackexchange.com/questions/1712#40908" target="_blank" rel="noopener noreferrer">KajMagnus’ answer</a> to the topic “What is a good way to display infinite nested comments?”</li>
+</ul>
+
+    </div>
+<div class="tags rhythm-onehalf">
+        <strong>Tagged with:</strong>
+        
+        <a class="postmeta__item postmeta__item--tag label" href="https://huzooka.github.io/tag/user-experience">User experience</a>
+        
+    </div>
+<a class="u-url" href="/development/2019/06/26/comment-threads.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="footer h-card bg-dark">
+    <data class="u-url" href="/"></data>
+
+    <div class="wrapper">
+        <div class="footer__row">
+            <div class="footer__col footer__col--slogan">
+                <div class="slogan">
+                    <span class="logo slogan__logo"></span>
+                    <p class="slogan__slogan">The Github Page where I temporarily publish my professional posts</p>
+                </div>
+            </div>
+
+            <div class="footer__col">
+<ul class="menu-list font-heading">
+<li class="menu-list__item h4">
+        <a href="/about/">About</a>
+    </li>
+<li class="menu-list__item h4">
+        <a href="https://huzooka.github.io/tag/drupal">Drupal</a>
+    </li>
+<li class="menu-list__item h4">
+        <a href="https://huzooka.github.io/tag/migration">Migration</a>
+    </li>
+<li class="menu-list__item h4">
+        <a href="/feed.xml">RSS</a>
+    </li>
+</ul>
+</div>
+
+            <div class="footer__col">
+<ul class="menu-list font-heading">
+<li class="menu-list__item h4"><a href="https://drupal.org/u/huzooka" target="_blank" rel="noopener noreferrer">Drupal.org</a></li>
+<li class="menu-list__item h4"><a href="https://github.com/zolhorvath" target="_blank" rel="noopener noreferrer">Github</a></li>
+<li class="menu-list__item h4"><a href="https://www.linkedin.com/in/zoltan-attila-horvath" target="_blank" rel="noopener noreferrer">Linkedin</a></li>
+<li class="menu-list__item h4"><a href="https://www.twitter.com/huzooka" target="_blank" rel="noopener noreferrer">Twitter</a></li>
+</ul>
+</div>
+        </div>
+    </div>
+</footer>
+</body>
+
+</html>

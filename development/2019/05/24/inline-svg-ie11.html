@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Workaround for Inline SVG Size Calculation Issues of Internet Explorer 11 | HuZooka</title>
+<meta name="generator" content="Jekyll v4.2.2">
+<meta property="og:title" content="Workaround for Inline SVG Size Calculation Issues of Internet Explorer 11">
+<meta name="author" content="Zoltán Horváth">
+<meta property="og:locale" content="en_US">
+<meta name="description" content="How to work around inline SVG size calculation issues of Internet Explorer 11.">
+<meta property="og:description" content="How to work around inline SVG size calculation issues of Internet Explorer 11.">
+<link rel="canonical" href="https://huzooka.github.io/development/2019/05/24/inline-svg-ie11.html">
+<meta property="og:url" content="https://huzooka.github.io/development/2019/05/24/inline-svg-ie11.html">
+<meta property="og:site_name" content="HuZooka">
+<meta property="og:image" content="https://huzooka.github.io/simple.png">
+<meta property="og:type" content="article">
+<meta property="article:published_time" content="2019-05-24T15:20:22+00:00">
+<meta name="twitter:card" content="summary_large_image">
+<meta property="twitter:image" content="https://huzooka.github.io/simple.png">
+<meta property="twitter:title" content="Workaround for Inline SVG Size Calculation Issues of Internet Explorer 11">
+<meta name="twitter:site" content="@huzooka">
+<meta name="twitter:creator" content="@huzooka">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Zoltán Horváth"},"dateModified":"2019-05-24T15:20:22+00:00","datePublished":"2019-05-24T15:20:22+00:00","description":"How to work around inline SVG size calculation issues of Internet Explorer 11.","headline":"Workaround for Inline SVG Size Calculation Issues of Internet Explorer 11","image":"https://huzooka.github.io/simple.png","mainEntityOfPage":{"@type":"WebPage","@id":"https://huzooka.github.io/development/2019/05/24/inline-svg-ie11.html"},"url":"https://huzooka.github.io/development/2019/05/24/inline-svg-ie11.html"}</script>
+
+<link rel="stylesheet" href="/assets/main.css?f3f2fc8c">
+<link type="application/atom+xml" rel="alternate" href="https://huzooka.github.io/feed.xml" title="HuZooka">
+<link rel="icon" href="/favicon.ico?b6c405af" type="image/vnd.microsoft.icon">
+    <link rel="preload" href="/assets/texb-875-125.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+    <link rel="preload" href="/assets/charissilr.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+    <link rel="preload" href="/assets/charissilb.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+</head>
+<body>
+<header class="site-header">
+
+    <div class="wrapper">
+<a class="site-title h3" rel="author" href="/">
+            <span class="logo logo--header"></span>HuZooka
+        </a><nav class="site-nav">
+            <input type="checkbox" id="nav-trigger" class="nav-trigger">
+            <label for="nav-trigger" class="menu-icon">
+                <span class="menu-icon__bar"></span>
+                <span class="menu-icon__bar"></span>
+                <span class="menu-icon__bar"></span>
+            </label>
+
+            <div class="trigger">
+<a class="nav-link h5" href="/about/">About</a><a class="nav-link h5" href="https://huzooka.github.io/tag/drupal">Drupal</a><a class="nav-link h5" href="https://huzooka.github.io/tag/migration">Migration</a>
+</div>
+        </nav>
+</div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+    <header class="post-header">
+        <h1 class="post-title p-name" itemprop="name headline">Workaround for Inline SVG Size Calculation Issues of Internet Explorer 11</h1>
+
+        <p class="postmeta">
+            <time class="dt-published" datetime="2019-05-24T15:20:22+00:00" itemprop="datePublished">May 24, 2019
+            </time>• <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span class="p-author h-card" itemprop="name">Zoltán Horváth</span></span></p>
+    </header>
+
+    <div class="post-content e-content rhythm-onehalf" itemprop="articleBody">
+        <p class="lead">To keep a Drupal site’s speed on the higher end, the SVG logo can be added directly to the block template instead of using an <code class="language-plaintext highlighter-rouge">&lt;img&gt;</code> tag with <code class="language-plaintext highlighter-rouge">src</code> attribute. But after a while, I noticed that Internet Explorer 11 doesn’t calculate the size of the inline SVG properly.</p>
+
+<p>After some research I found <a href="https://css-tricks.com/scale-svg/" target="_blank" rel="noopener noreferrer">this article</a>. Sadly, <a href="https://css-tricks.com/scale-svg/#article-header-id-5" target="_blank" rel="noopener noreferrer">none of its recommendations</a> meet my needs: while in the header I need to size the logo’s height to match the header’s height and leave the width auto-calculated, in the footer I need auto height and make the width equal to its container width.</p>
+
+<p>But I had an idea: if I get the width and the height of the SVG, create a placeholder image and wrap the placeholder and the SVG into a div or span, it will be possible to get around the sizing issues with a small amount of CSS.</p>
+
+<h2 id="get-the-dimensions-of-the-svg">Get the dimensions of the SVG</h2>
+
+<p>Let’s assume that we already have the content of the SVG as a <code class="language-plaintext highlighter-rouge">SimpleXMLElement</code> object. It’s a smart idea to wrap the instantiation into a try-catch block for the case when the SVG (that is actually an XML actually) is malformed.</p>
+
+<p>Getting the width and height is really easy if the SVG has declared <code class="language-plaintext highlighter-rouge">width</code> or <code class="language-plaintext highlighter-rouge">height</code> attributes:</p>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr>
+<td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+</pre></td>
+<td class="rouge-code"><pre><span class="k">if</span> <span class="p">(</span><span class="nv">$simple_xml_element</span><span class="p">[</span><span class="s1">'width'</span><span class="p">]</span> <span class="o">&amp;&amp;</span> <span class="nv">$simple_xml_element</span><span class="p">[</span><span class="s1">'height'</span><span class="p">])</span> <span class="p">{</span>
+  <span class="nv">$dimensions</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s1">'width'</span> <span class="o">=&gt;</span> <span class="p">(</span><span class="n">string</span><span class="p">)</span> <span class="nv">$simple_xml_element</span><span class="p">[</span><span class="s1">'width'</span><span class="p">],</span>
+    <span class="s1">'height'</span> <span class="o">=&gt;</span> <span class="p">(</span><span class="n">string</span><span class="p">)</span> <span class="nv">$simple_xml_element</span><span class="p">[</span><span class="s1">'height'</span><span class="p">],</span>
+  <span class="p">];</span>
+<span class="p">}</span>
+</pre></td>
+</tr></tbody></table></code></pre></div></div>
+
+<p>But if we don’t have them, we have to check <code class="language-plaintext highlighter-rouge">viewBox</code>, and if that exists, parse its value:</p>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr>
+<td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+</pre></td>
+<td class="rouge-code"><pre><span class="k">elseif</span> <span class="p">(</span><span class="nv">$simple_xml_element</span><span class="p">[</span><span class="s1">'viewBox'</span><span class="p">])</span> <span class="p">{</span>
+  <span class="nv">$vbox_array</span> <span class="o">=</span> <span class="nb">array_values</span><span class="p">(</span>
+   <span class="c1">// Filter array fix the case when the vievBox value contains extra spaces.</span>
+    <span class="nb">array_filter</span><span class="p">(</span><span class="nb">explode</span><span class="p">(</span><span class="s1">' '</span><span class="p">,</span> <span class="p">(</span><span class="n">string</span><span class="p">)</span> <span class="nv">$simple_xml_element</span><span class="p">[</span><span class="s1">'viewBox'</span><span class="p">]),</span> <span class="k">function</span> <span class="p">(</span><span class="nv">$value</span><span class="p">)</span> <span class="p">{</span>
+      <span class="k">return</span> <span class="nv">$value</span> <span class="o">===</span> <span class="s1">'0'</span> <span class="o">||</span> <span class="o">!</span><span class="nb">empty</span><span class="p">(</span><span class="nv">$value</span><span class="p">);</span>
+    <span class="p">})</span>
+  <span class="p">);</span>
+  <span class="k">if</span> <span class="p">(</span><span class="nb">count</span><span class="p">(</span><span class="nv">$vbox_array</span><span class="p">)</span> <span class="o">===</span> <span class="mi">4</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">list</span><span class="p">(,</span> <span class="p">,</span> <span class="nv">$width</span><span class="p">,</span> <span class="nv">$height</span><span class="p">)</span> <span class="o">=</span> <span class="nv">$vbox_array</span><span class="p">;</span>
+    <span class="nv">$dimensions</span> <span class="o">=</span> <span class="p">[</span>
+      <span class="s1">'width'</span> <span class="o">=&gt;</span> <span class="nv">$width</span><span class="p">,</span>
+      <span class="s1">'height'</span> <span class="o">=&gt;</span> <span class="nv">$height</span><span class="p">,</span>
+    <span class="p">];</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</pre></td>
+</tr></tbody></table></code></pre></div></div>
+
+<h2 id="create-the-placeholder-image">Create the placeholder image</h2>
+
+<p>You probably noticed the weird type-castings above. I use the GMP (GNU Multiple Precision) extension’s <a href="https://www.php.net/manual/en/function.gmp-gcd.php" target="_blank" rel="noopener noreferrer"><code class="language-plaintext highlighter-rouge">gmb_gcd()</code></a> function as well to get the greatest common divisor of <code class="language-plaintext highlighter-rouge">width</code> and <code class="language-plaintext highlighter-rouge">height</code>: That will be practical for reducing the size of the transparent PNG image as much as possible.</p>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr>
+<td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+</pre></td>
+<td class="rouge-code"><pre><span class="nv">$gcd</span> <span class="o">=</span> <span class="p">(</span><span class="n">int</span><span class="p">)</span> <span class="nb">gmp_gcd</span><span class="p">(</span><span class="nv">$dimensions</span><span class="p">[</span><span class="s1">'width'</span><span class="p">],</span> <span class="nv">$dimensions</span><span class="p">[</span><span class="s1">'height'</span><span class="p">]);</span>
+<span class="nv">$dimensions</span><span class="p">[</span><span class="s1">'width'</span><span class="p">]</span> <span class="o">=</span> <span class="p">((</span><span class="n">int</span><span class="p">)</span> <span class="nv">$dimensions</span><span class="p">[</span><span class="s1">'width'</span><span class="p">])</span> <span class="o">/</span> <span class="nv">$gcd</span><span class="p">;</span>
+<span class="nv">$dimensions</span><span class="p">[</span><span class="s1">'height'</span><span class="p">]</span> <span class="o">=</span> <span class="p">((</span><span class="n">int</span><span class="p">)</span> <span class="nv">$dimensions</span><span class="p">[</span><span class="s1">'height'</span><span class="p">])</span> <span class="o">/</span> <span class="nv">$gcd</span><span class="p">;</span>
+</pre></td>
+</tr></tbody></table></code></pre></div></div>
+
+<p>Let’s generate the placeholder image:</p>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr>
+<td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+</pre></td>
+<td class="rouge-code"><pre><span class="nv">$img</span> <span class="o">=</span> <span class="nb">imagecreatetruecolor</span><span class="p">(</span><span class="nv">$dimensions</span><span class="p">[</span><span class="s1">'width'</span><span class="p">]</span> <span class="p">,</span> <span class="nv">$dimensions</span><span class="p">[</span><span class="s1">'height'</span><span class="p">]);</span>
+<span class="nb">imagesavealpha</span><span class="p">(</span><span class="nv">$img</span><span class="p">,</span> <span class="kc">true</span><span class="p">);</span>
+<span class="nv">$color</span> <span class="o">=</span> <span class="nb">imagecolorallocatealpha</span><span class="p">(</span><span class="nv">$img</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">127</span><span class="p">);</span>
+<span class="nb">imagefill</span><span class="p">(</span><span class="nv">$img</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="nv">$color</span><span class="p">);</span>
+</pre></td>
+</tr></tbody></table></code></pre></div></div>
+
+<h2 id="generate-the-html-markup">Generate the HTML markup</h2>
+
+<p>Now we have almost everything to generate the actual HTML markup that’s ready for use. But instead of saving the placeholder PNG and referencing it as a resource, we’ll insert it as a base64-encoded content.</p>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr>
+<td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+</pre></td>
+<td class="rouge-code"><pre><span class="c1">// Using imagepng() without stream or path resource will output the raw image</span>
+<span class="c1">// stream directly, so we need to start output buffering.</span>
+<span class="nb">ob_start</span><span class="p">();</span>
+<span class="nb">imagepng</span><span class="p">(</span><span class="nv">$img</span><span class="p">);</span>
+<span class="nv">$contents</span> <span class="o">=</span> <span class="nb">ob_get_contents</span><span class="p">();</span>
+<span class="c1">// End the output buffer.</span>
+<span class="nb">ob_end_clean</span><span class="p">();</span>
+<span class="nv">$placeholder_base64</span> <span class="o">=</span> <span class="nb">base64_encode</span><span class="p">(</span><span class="nv">$contents</span><span class="p">);</span>
+</pre></td>
+</tr></tbody></table></code></pre></div></div>
+
+<p>Gorgeous! At this point we really have everything for generating the markup:</p>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr>
+<td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+</pre></td>
+<td class="rouge-code"><pre><span class="nv">$image</span> <span class="o">=</span> <span class="s1">'&lt;img '</span> <span class="mf">.</span> 
+  <span class="s1">'class="svg-canvas__image"'</span> <span class="mf">.</span>
+  <span class="s1">'src="data:image/png;base64,'</span> <span class="mf">.</span> <span class="nv">$placeholder_base64</span> <span class="mf">.</span> <span class="s1">'"'</span> <span class="mf">.</span>
+  <span class="s1">'alt="Site logo placeholder" '</span> <span class="mf">.</span>
+  <span class="s1">'aria-hidden="true" /&gt;'</span><span class="p">;</span>
+
+<span class="k">return</span>
+  <span class="s1">'&lt;div class="svg-canvas"&gt;'</span> <span class="mf">.</span>
+  <span class="nv">$image</span> <span class="mf">.</span>
+  <span class="nv">$svgcontent</span> <span class="mf">.</span>
+  <span class="s1">'&lt;/div&gt;'</span><span class="p">;</span>
+</pre></td>
+</tr></tbody></table></code></pre></div></div>
+
+<p>(I always prefer using renderable arrays, but I think that using strings above makes the solution easier to understand.)</p>
+
+<h2 id="the-css">The CSS</h2>
+
+<p>So the idea was to leave the placeholder image to be scaled automatically whilst the SVG is stretched to its parent wrapper:</p>
+
+<div class="language-css highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr>
+<td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+</pre></td>
+<td class="rouge-code"><pre><span class="c">/* The SVG canvas. */</span>
+<span class="nc">.svg-canvas</span> <span class="p">{</span>
+  <span class="nl">position</span><span class="p">:</span> <span class="nb">relative</span><span class="p">;</span>
+  <span class="nl">line-height</span><span class="p">:</span> <span class="m">0</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="c">/* Placeholder image. */</span>
+<span class="nc">.svg-canvas__image</span> <span class="p">{</span>
+  <span class="nl">width</span><span class="p">:</span> <span class="m">100%</span><span class="p">;</span>
+  <span class="nl">height</span><span class="p">:</span> <span class="nb">auto</span><span class="p">;</span>
+  <span class="nl">visibility</span><span class="p">:</span> <span class="nb">hidden</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="c">/* The inlined SVG. */</span>
+<span class="nc">.svg-canvas</span> <span class="o">&gt;</span> <span class="nt">svg</span> <span class="p">{</span>
+  <span class="nl">position</span><span class="p">:</span> <span class="nb">absolute</span><span class="p">;</span>
+  <span class="nl">top</span><span class="p">:</span> <span class="m">0</span><span class="p">;</span>
+  <span class="nl">right</span><span class="p">:</span> <span class="m">0</span><span class="p">;</span>
+  <span class="nl">bottom</span><span class="p">:</span> <span class="m">0</span><span class="p">;</span>
+  <span class="nl">left</span><span class="p">:</span> <span class="m">0</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></td>
+</tr></tbody></table></code></pre></div></div>
+
+<h2 id="summary">Summary</h2>
+
+<p>With the above, we’re able to reduce the number of render blocking resources by at least one and keep our browser support level at the same time – with a minimal amount of extra bytes.</p>
+
+<hr>
+
+<p><em>Sources</em>:</p>
+
+<ul>
+  <li>
+<a href="https://css-tricks.com/scale-svg/" target="_blank" rel="noopener noreferrer">How to Scale SVG</a> on CSS-Tricks.</li>
+</ul>
+
+    </div>
+<div class="tags rhythm-onehalf">
+        <strong>Tagged with:</strong>
+        
+        <a class="postmeta__item postmeta__item--tag label" href="https://huzooka.github.io/tag/drupal">Drupal</a>
+        
+        <a class="postmeta__item postmeta__item--tag label" href="https://huzooka.github.io/tag/performance">Performance</a>
+        
+        <a class="postmeta__item postmeta__item--tag label" href="https://huzooka.github.io/tag/browser-support">Browser support</a>
+        
+    </div>
+<a class="u-url" href="/development/2019/05/24/inline-svg-ie11.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="footer h-card bg-dark">
+    <data class="u-url" href="/"></data>
+
+    <div class="wrapper">
+        <div class="footer__row">
+            <div class="footer__col footer__col--slogan">
+                <div class="slogan">
+                    <span class="logo slogan__logo"></span>
+                    <p class="slogan__slogan">The Github Page where I temporarily publish my professional posts</p>
+                </div>
+            </div>
+
+            <div class="footer__col">
+<ul class="menu-list font-heading">
+<li class="menu-list__item h4">
+        <a href="/about/">About</a>
+    </li>
+<li class="menu-list__item h4">
+        <a href="https://huzooka.github.io/tag/drupal">Drupal</a>
+    </li>
+<li class="menu-list__item h4">
+        <a href="https://huzooka.github.io/tag/migration">Migration</a>
+    </li>
+<li class="menu-list__item h4">
+        <a href="/feed.xml">RSS</a>
+    </li>
+</ul>
+</div>
+
+            <div class="footer__col">
+<ul class="menu-list font-heading">
+<li class="menu-list__item h4"><a href="https://drupal.org/u/huzooka" target="_blank" rel="noopener noreferrer">Drupal.org</a></li>
+<li class="menu-list__item h4"><a href="https://github.com/zolhorvath" target="_blank" rel="noopener noreferrer">Github</a></li>
+<li class="menu-list__item h4"><a href="https://www.linkedin.com/in/zoltan-attila-horvath" target="_blank" rel="noopener noreferrer">Linkedin</a></li>
+<li class="menu-list__item h4"><a href="https://www.twitter.com/huzooka" target="_blank" rel="noopener noreferrer">Twitter</a></li>
+</ul>
+</div>
+        </div>
+    </div>
+</footer>
+</body>
+
+</html>

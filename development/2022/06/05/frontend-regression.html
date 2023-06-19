@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>Front End Regression Testing with Nightwatch.js and Nightwatch VRT | HuZooka</title>
+<meta name="generator" content="Jekyll v4.2.2">
+<meta property="og:title" content="Front End Regression Testing with Nightwatch.js and Nightwatch VRT">
+<meta name="author" content="Zoltán Horváth">
+<meta property="og:locale" content="en_US">
+<meta name="description" content="Visual regression tests for your CSS codebase.">
+<meta property="og:description" content="Visual regression tests for your CSS codebase.">
+<link rel="canonical" href="https://huzooka.github.io/development/2022/06/05/frontend-regression.html">
+<meta property="og:url" content="https://huzooka.github.io/development/2022/06/05/frontend-regression.html">
+<meta property="og:site_name" content="HuZooka">
+<meta property="og:image" content="https://huzooka.github.io/files/image/Visual-regression-motivation.png">
+<meta property="og:type" content="article">
+<meta property="article:published_time" content="2022-06-05T05:02:19+00:00">
+<meta name="twitter:card" content="summary_large_image">
+<meta property="twitter:image" content="https://huzooka.github.io/files/image/Visual-regression-motivation.png">
+<meta property="twitter:title" content="Front End Regression Testing with Nightwatch.js and Nightwatch VRT">
+<meta name="twitter:site" content="@huzooka">
+<meta name="twitter:creator" content="@huzooka">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Zoltán Horváth"},"dateModified":"2022-06-05T05:02:19+00:00","datePublished":"2022-06-05T05:02:19+00:00","description":"Visual regression tests for your CSS codebase.","headline":"Front End Regression Testing with Nightwatch.js and Nightwatch VRT","image":"https://huzooka.github.io/files/image/Visual-regression-motivation.png","mainEntityOfPage":{"@type":"WebPage","@id":"https://huzooka.github.io/development/2022/06/05/frontend-regression.html"},"url":"https://huzooka.github.io/development/2022/06/05/frontend-regression.html"}</script>
+
+<link rel="stylesheet" href="/assets/main.css?f3f2fc8c">
+<link type="application/atom+xml" rel="alternate" href="https://huzooka.github.io/feed.xml" title="HuZooka">
+<link rel="icon" href="/favicon.ico?b6c405af" type="image/vnd.microsoft.icon">
+    <link rel="preload" href="/assets/texb-875-125.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+    <link rel="preload" href="/assets/charissilr.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+    <link rel="preload" href="/assets/charissilb.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+</head>
+<body>
+<header class="site-header">
+
+    <div class="wrapper">
+<a class="site-title h3" rel="author" href="/">
+            <span class="logo logo--header"></span>HuZooka
+        </a><nav class="site-nav">
+            <input type="checkbox" id="nav-trigger" class="nav-trigger">
+            <label for="nav-trigger" class="menu-icon">
+                <span class="menu-icon__bar"></span>
+                <span class="menu-icon__bar"></span>
+                <span class="menu-icon__bar"></span>
+            </label>
+
+            <div class="trigger">
+<a class="nav-link h5" href="/about/">About</a><a class="nav-link h5" href="https://huzooka.github.io/tag/drupal">Drupal</a><a class="nav-link h5" href="https://huzooka.github.io/tag/migration">Migration</a>
+</div>
+        </nav>
+</div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+    <header class="post-header">
+        <h1 class="post-title p-name" itemprop="name headline">Front End Regression Testing with Nightwatch.js and Nightwatch VRT</h1>
+
+        <p class="postmeta">
+            <time class="dt-published" datetime="2022-06-05T05:02:19+00:00" itemprop="datePublished">June 5, 2022
+            </time>• <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span class="p-author h-card" itemprop="name">Zoltán Horváth</span></span></p>
+    </header>
+
+    <div class="post-content e-content rhythm-onehalf" itemprop="articleBody">
+        <p class="lead">If you have to maintain a huge or quite complex CSS codebase, it is a big challenge to make sure you don’t break certain parts of the site when you try to fix an issue or just simply add a new component.</p>
+
+<p>Do you want to keep track of how your code works on the current browser versions? Or you just want to do a refactor without causing any accidental regressions? Either way, in 2022, we have well-functioning, widely used visual regression testing tools at our disposal. In this post, I want to show you how we can use <a href="https://nightwatchjs.org/" target="_blank" rel="noopener noreferrer">Nightwatch.js</a> and <a href="https://github.com/Crunch-io/nightwatch-vrt" target="_blank" rel="noopener noreferrer">Nightwatch VRT</a>.</p>
+
+<h2 id="my-motivation">My motivation</h2>
+
+<p>Since I am interested in improving and optimizing the performance of websites in particular, I try to reduce the size of the CSS asset(s) as much as possible. In many cases, serious results can be achieved only by rearranging the order of the selectors. I thought since my CSS codebase is small enough, I can easily refactor it without causing any issues. And after a couple weeks, I noticed that paragraphs which contain a <code class="language-plaintext highlighter-rouge">&lt;sup&gt;</code> tag have very weird vertical rhythm:</p>
+
+<p class="figure"><a href="/files/image/Visual-regression-motivation.png" class="image-linker"><picture><source srcset="/files/image/Visual-regression-motivation.webp" type="image/webp" media="all"><img src="/files/image/Visual-regression-motivation.png" alt="Mixed line height in a HTML paragraph containing a &lt;sup&gt; tag. The light purple “shadow” shows where words should be." width="1320" height="450" loading="lazy"></source></picture></a>
+Mixed line height in a HTML paragraph containing a <code class="language-plaintext highlighter-rouge">&lt;sup&gt;</code> tag. The light purple “shadow” shows where words should be.</p>
+
+<p>Well, this was the time I decided I will set up visual regression testing.</p>
+
+<h2 id="basics-background">Basics, background</h2>
+
+<p>You may remember that <a href="/development/2018/12/06/using-nightwatch-for-screenshots.html">I used Nightwatch.js tests about three and a half years ago</a> in a quite similar situation. Well, Nightwatch VRT uses very similar <a href="https://nodejs.org/" target="_blank" rel="noopener noreferrer">Node.js</a> modules and tools under the hood to perform visual regression tests<sup id="fnref:1" role="doc-noteref"><a href="#fn:1" class="footnote" rel="footnote">1</a></sup>.</p>
+
+<p>Essentially, Nightwatch VRT provides a Nightwatch.js command and a Nightwatch.js assertion. The way it works is <a href="https://github.com/Crunch-io/nightwatch-vrt/tree/v0.2.9#usage" target="_blank" rel="noopener noreferrer">very developer friendly</a>: In your Nightwatch.js test, you can use the <a href="https://github.com/Crunch-io/nightwatch-vrt/blob/v0.2.9/assertions/screenshotIdenticalToBaseline.js" target="_blank" rel="noopener noreferrer"><code class="language-plaintext highlighter-rouge">screenshotIdenticalToBaseline()</code> assertion</a> to compare the actual visual representation of an HTML element to a base image. If the base image does not exist – because you are executing the test for the first time, or you just added a new <code class="language-plaintext highlighter-rouge">screenshotIdenticalToBaseline()</code> assertion – then this assertion will generate the base image at the first execution.</p>
+
+<h2 id="setup-nightwatchjs-and-nightwatch-vrt">Setup Nightwatch.js and Nightwatch VRT</h2>
+
+<ol>
+  <li>
+    <p>Initialize the node.js part of your project (only necessary if it does not exist yet):</p>
+
+    <p><code class="language-plaintext highlighter-rouge">yarn init .</code></p>
+  </li>
+  <li>
+    <p>Add Nightwatch.js and Nightwatch VRT as development dependencies:</p>
+
+    <p><code class="language-plaintext highlighter-rouge">yarn add --dev nightwatch-vrt nightwatch@1</code></p>
+
+    <p>At the time I am writing this post, we have to use Nightwatch.js with <code class="language-plaintext highlighter-rouge">@1</code> version constraint, because Nightwatch VRT needs this version.</p>
+  </li>
+  <li>
+    <p>Add a <code class="language-plaintext highlighter-rouge">nightwatch.json</code> file to the root of the project then add the assertions and commands folder of Nightwatch VRT to this configuration. I used to copy this file from <code class="language-plaintext highlighter-rouge">node_modules/nightwatch/examples</code> then slightly customize it to match my needs. This is what I use:</p>
+
+    <div data-file="./nightwatch.json" class="language-json highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr>
+<td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+36
+</pre></td>
+<td class="rouge-code"><pre><span class="p">{</span><span class="w">
+  </span><span class="nl">"src_folders"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"./tests/Nightwatch/tests"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"output_folder"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"./tests/Nightwatch/reports"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"custom_commands_path"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+    </span><span class="s2">"./tests/Nightwatch/Commands"</span><span class="p">,</span><span class="w">
+    </span><span class="s2">"./node_modules/nightwatch-vrt/commands"</span><span class="w">
+  </span><span class="p">],</span><span class="w">
+  </span><span class="nl">"custom_assertions_path"</span><span class="p">:</span><span class="w"> </span><span class="s2">"./node_modules/nightwatch-vrt/assertions"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"globals_path"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"./tests/Nightwatch/globals.js"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"test_workers"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"webdriver"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"server_path"</span><span class="p">:</span><span class="w"> </span><span class="s2">"/usr/local/bin/chromedriver"</span><span class="p">,</span><span class="w">
+    </span><span class="nl">"start_process"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="w">
+  </span><span class="p">},</span><span class="w">
+  </span><span class="nl">"test_settings"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="nl">"screenshots"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+      </span><span class="nl">"enabled"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"path"</span><span class="p">:</span><span class="w"> </span><span class="s2">"./tests/Nightwatch/reports/screenshots"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"on_failure"</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"on_error"</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="w">
+    </span><span class="p">},</span><span class="w">
+    </span><span class="nl">"default"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+      </span><span class="nl">"disable_colors"</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"screenshots"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+        </span><span class="nl">"enabled"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"path"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">""</span><span class="w">
+      </span><span class="p">},</span><span class="w">
+      </span><span class="nl">"request_timeout_options"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+        </span><span class="nl">"timeout"</span><span class="p">:</span><span class="w"> </span><span class="mi">1000</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"retry_attempts"</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span><span class="w">
+      </span><span class="p">},</span><span class="w">
+      </span><span class="nl">"desiredCapabilities"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">{}</span><span class="w">
+    </span><span class="p">},</span><span class="w">
+    </span><span class="nl">"mobile"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">{}</span><span class="w">
+  </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></pre></td>
+</tr></tbody></table></code></pre></div>    </div>
+  </li>
+  <li>
+    <p>(Optional) Nightwatch VRT searches for its configuration either at Nightwatch <code class="language-plaintext highlighter-rouge">globals.test_settings.default.visual_regression_settings</code> or at Nightwatch <code class="language-plaintext highlighter-rouge">globals.visual_regression_settings</code>. We have to create the file we specified at the <code class="language-plaintext highlighter-rouge">globals_path</code> configuration (line 9). We can define other pre- and post-test hooks here, or store the “default” landing page url like I do. But if we don’t specify any <code class="language-plaintext highlighter-rouge">visual_regression_settings</code> config anywhere, then Nightwatch VRT will use its default configuration. If you think you don’t need this “globals” file, you can delete it, but don’t forget to remove the <code class="language-plaintext highlighter-rouge">globals_path</code> from your <code class="language-plaintext highlighter-rouge">nightwatch.js</code> JSON.</p>
+
+    <div data-file="./tests/Nightwatch/globals.js" class="language-js highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr>
+<td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+</pre></td>
+<td class="rouge-code"><pre><span class="nx">module</span><span class="p">.</span><span class="nx">exports</span> <span class="o">=</span> <span class="p">{</span>
+  <span class="na">landingPageUrl</span><span class="p">:</span> <span class="dl">'</span><span class="s1">http://127.0.0.1:4000</span><span class="dl">'</span><span class="p">,</span>
+  <span class="na">beforeEach</span><span class="p">:</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">browser</span><span class="p">,</span> <span class="nx">done</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nx">browser</span><span class="p">.</span><span class="nx">resizeWindow</span><span class="p">(</span><span class="mi">1024</span><span class="p">,</span> <span class="mi">600</span><span class="p">,</span> <span class="nx">done</span><span class="p">);</span>
+  <span class="p">},</span>
+  <span class="na">visual_regression_settings</span><span class="p">:</span> <span class="p">{</span>
+    <span class="dl">"</span><span class="s2">baseline_screenshots_path</span><span class="dl">"</span><span class="p">:</span> <span class="dl">'</span><span class="s1">tests/Nightwatch/vrt</span><span class="dl">'</span><span class="p">,</span>
+    <span class="dl">"</span><span class="s2">threshold</span><span class="dl">"</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="dl">"</span><span class="s2">prompt</span><span class="dl">"</span><span class="p">:</span> <span class="kc">false</span><span class="p">,</span>
+    <span class="dl">"</span><span class="s2">always_save_diff_screenshot</span><span class="dl">"</span><span class="p">:</span> <span class="kc">false</span>
+  <span class="p">}</span>
+<span class="p">};</span>
+</pre></td>
+</tr></tbody></table></code></pre></div>    </div>
+  </li>
+  <li>
+    <p>(Optional) Since I can’t be sure that the path to the chromedriver binary is always <code class="language-plaintext highlighter-rouge">/usr/local/bin/chromedriver</code> (see line 12 above), I also have a <code class="language-plaintext highlighter-rouge">nightwatch.conf.js</code> file in my root which changes this path to the output of the <code class="language-plaintext highlighter-rouge">which chromedriver</code> command:</p>
+
+    <div data-file="./nightwatch.conf.js" class="language-js highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr>
+<td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+</pre></td>
+<td class="rouge-code"><pre><span class="kd">const</span> <span class="nx">which</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="dl">'</span><span class="s1">which</span><span class="dl">'</span><span class="p">);</span>
+   
+<span class="nx">module</span><span class="p">.</span><span class="nx">exports</span> <span class="o">=</span> <span class="p">(</span><span class="nx">settings</span> <span class="o">=&gt;</span> <span class="p">{</span>
+  <span class="kd">const</span> <span class="nx">chromedriverPath</span> <span class="o">=</span> <span class="nx">which</span><span class="p">.</span><span class="nx">sync</span><span class="p">(</span><span class="dl">'</span><span class="s1">chromedriver</span><span class="dl">'</span><span class="p">);</span>
+  <span class="k">if</span> <span class="p">(</span><span class="nx">chromedriverPath</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nx">settings</span><span class="p">.</span><span class="nx">webdriver</span><span class="p">.</span><span class="nx">server_path</span> <span class="o">=</span> <span class="nx">chromedriverPath</span><span class="p">;</span>
+  <span class="p">}</span>
+  <span class="k">return</span> <span class="nx">settings</span><span class="p">;</span>
+<span class="p">})(</span><span class="nx">require</span><span class="p">(</span><span class="dl">'</span><span class="s1">./nightwatch.json</span><span class="dl">'</span><span class="p">));</span>
+</pre></td>
+</tr></tbody></table></code></pre></div>    </div>
+  </li>
+</ol>
+
+<p>In the config file above, inside <code class="language-plaintext highlighter-rouge">test_settings</code>, we have a <code class="language-plaintext highlighter-rouge">default</code> (line 22) and a <code class="language-plaintext highlighter-rouge">mobile</code> (line 34) key. These are the environments our tests can be executed on. The default environment is a special one: on one hand, if the environment isn’t specified, Nightwatch.js will use this environment. On the other hand, every other environment we specify (now it is <code class="language-plaintext highlighter-rouge">mobile</code>) will inherit the configuration of the default one.</p>
+
+<h2 id="set-up-test-browsers">Set up test browsers</h2>
+
+<p>I think using <code class="language-plaintext highlighter-rouge">chromedriver</code> as the (default) browser for executing Nightwatch.js tests on is the most obvious choice. This is what I know the best, for example I can configure it to act as a mobile browser (with touch-capable screen). So I chose Chrome and <code class="language-plaintext highlighter-rouge">chromedriver</code>. I added these configurations to my <code class="language-plaintext highlighter-rouge">nightwatch.json</code>:</p>
+
+<div data-file="./nightwatch.json" class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr>
+<td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+35
+</pre></td>
+<td class="rouge-code"><pre><span class="p">{</span><span class="w">
+  </span><span class="nl">"src_folders"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"./tests/Nightwatch/tests"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"output_folder"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"./tests/Nightwatch/reports"</span><span class="p">,</span><span class="w">
+  </span><span class="err">…</span><span class="w">
+  </span><span class="nl">"test_settings"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+    </span><span class="err">…</span><span class="w">
+    </span><span class="nl">"default"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+      </span><span class="err">…</span><span class="w">
+      </span><span class="nl">"desiredCapabilities"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+        </span><span class="nl">"browserName"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="s2">"chrome"</span><span class="p">,</span><span class="w">
+        </span><span class="nl">"loggingPrefs"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nl">"driver"</span><span class="p">:</span><span class="w"> </span><span class="s2">"INFO"</span><span class="p">,</span><span class="w"> </span><span class="nl">"server"</span><span class="p">:</span><span class="w"> </span><span class="s2">"OFF"</span><span class="p">,</span><span class="w"> </span><span class="nl">"browser"</span><span class="p">:</span><span class="w"> </span><span class="s2">"INFO"</span><span class="p">},</span><span class="w">
+        </span><span class="nl">"chromeOptions"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+          </span><span class="nl">"args"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+            </span><span class="s2">"--headless"</span><span class="p">,</span><span class="w">
+            </span><span class="s2">"--force-device-scale-factor=1"</span><span class="p">,</span><span class="w">
+            </span><span class="s2">"--hide-scrollbars"</span><span class="p">,</span><span class="w">
+            </span><span class="s2">"--font-render-hinting=full"</span><span class="p">,</span><span class="w">
+            </span><span class="s2">"--enable-font-antialiasing"</span><span class="p">,</span><span class="w">
+            </span><span class="s2">"--force-color-profile=srgb"</span><span class="w">
+          </span><span class="p">]</span><span class="w">
+        </span><span class="p">}</span><span class="w">
+      </span><span class="p">}</span><span class="w">
+    </span><span class="p">},</span><span class="w">
+    </span><span class="nl">"mobile"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+      </span><span class="nl">"desiredCapabilities"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+        </span><span class="nl">"chromeOptions"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+          </span><span class="nl">"mobileEmulation"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w">
+            </span><span class="nl">"deviceMetrics"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="nl">"width"</span><span class="p">:</span><span class="w"> </span><span class="mi">360</span><span class="p">,</span><span class="w"> </span><span class="nl">"height"</span><span class="p">:</span><span class="w"> </span><span class="mi">640</span><span class="p">,</span><span class="w"> </span><span class="nl">"pixelRatio"</span><span class="p">:</span><span class="w"> </span><span class="mf">1.0</span><span class="w"> </span><span class="p">},</span><span class="w">
+            </span><span class="nl">"userAgent"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Mozilla/5.0 (Linux; Android 4.2.1; en-us; Nexus 5 Build/JOP40D) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.166 Mobile Safari/535.19"</span><span class="w">
+          </span><span class="p">}</span><span class="w">
+        </span><span class="p">}</span><span class="w">
+      </span><span class="p">}</span><span class="w">
+    </span><span class="p">}</span><span class="w">
+  </span><span class="p">}</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></pre></td>
+</tr></tbody></table></code></pre></div></div>
+
+<h2 id="writing-the-first-visual-regression-test">Writing the first visual regression test</h2>
+
+<p>In the configuration JSON, the <code class="language-plaintext highlighter-rouge">"src_folders" : "./tests/Nightwatch/tests"</code> line declares that our Nightwatch.js tests should be in that directory. Of course, we can execute tests which aren’t stored in this folder, but if we just run <code class="language-plaintext highlighter-rouge">./node_modules/.bin/nightwatch</code>, only the tests in <code class="language-plaintext highlighter-rouge">./tests/Nightwatch/tests</code> are discovered.</p>
+
+<p>Make sure your chromedriver is compatible with the Chrome version you use, then create a simple test in the <code class="language-plaintext highlighter-rouge">./tests/Nightwatch/tests</code> folder:</p>
+
+<div data-file="./tests/Nightwatch/tests/huzooka.js" class="language-js highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr>
+<td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+</pre></td>
+<td class="rouge-code"><pre><span class="nx">module</span><span class="p">.</span><span class="nx">exports</span> <span class="o">=</span> <span class="p">{</span>
+  <span class="dl">'</span><span class="s1">HuZooka</span><span class="dl">'</span><span class="p">:</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">client</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nx">client</span>
+      <span class="p">.</span><span class="nx">url</span><span class="p">(</span><span class="dl">'</span><span class="s1">https://huzooka.github.io/</span><span class="dl">'</span><span class="p">)</span>
+      <span class="p">.</span><span class="nx">waitForElementVisible</span><span class="p">(</span><span class="dl">'</span><span class="s1">css</span><span class="dl">'</span><span class="p">,</span> <span class="dl">'</span><span class="s1">main .intro</span><span class="dl">'</span><span class="p">)</span>
+      <span class="p">.</span><span class="nx">assert</span><span class="p">.</span><span class="nx">screenshotIdenticalToBaseline</span><span class="p">(</span><span class="dl">'</span><span class="s1">main .intro</span><span class="dl">'</span><span class="p">,</span> <span class="dl">'</span><span class="s1">HuZooka intro</span><span class="dl">'</span><span class="p">)</span>
+      <span class="p">.</span><span class="nx">end</span><span class="p">();</span>
+  <span class="p">}</span>
+<span class="p">}</span>
+</pre></td>
+</tr></tbody></table></code></pre></div></div>
+
+<h3 id="how-it-works">How it works</h3>
+
+<p>Nightwatch.js tests can be performed by executing this command on CLI:</p>
+<pre><code class="language-cli">./node_modules/.bin/nightwatch
+</code></pre>
+
+<p>For the first time, Nightwatch VRT will save a base image in the configured <code class="language-plaintext highlighter-rouge">./tests/Nightwatch/vrt</code> folder, in a subdirectory that’s name is the same as the test name (by default), and the base image file’s name will be <code class="language-plaintext highlighter-rouge">Huzooka intro.png</code>.</p>
+
+<p class="figure"><a href="/files/image/Visual-regression-base.png" class="image-linker"><picture><source srcset="/files/image/Visual-regression-base.webp" type="image/webp" media="all"><img src="/files/image/Visual-regression-base.png" alt="A test base image" width="740" height="164" loading="lazy"></source></picture></a>
+The base image saved into <code class="language-plaintext highlighter-rouge">./tests/Nightwatch/vrt/huzooka/Huzooka intro.png</code></p>
+
+<p>If the base image exists, each subsequent test run will compare the base image with the actually taken image, and save a diff image file if the comparison fails: if I change my shortened name “Zoltán Horváth” to my full name, “Zoltán Attila Horváth”, then the test will fail:</p>
+
+<pre><code class="language-cli">FAILED: 1 assertions failed and  15 passed (5.626s)
+_________________________________________________
+
+TEST FAILURE:  1 assertions failed, 15 passed (6.693s)
+
+ ✖ huzooka
+ – HuZooka (5.626s)
+   Visual regression test results for element &lt;.page-content .intro&gt; in 5000ms - expected "true" but got: "/Users/zoli/projects/github-blog/vrt/diff/huzooka/HuZooka intro.diff.png" (5021ms)
+       at Object.HuZooka (/Users/zoli/projects/github-blog/tests/Nightwatch/tests/huzooka.js:15:15)
+       at processTicksAndRejections (internal/process/task_queues.js:97:5)
+
+error Command failed with exit code 5.
+</code></pre>
+
+<p>With the default Nightwatch VRT configuration, a failed visual regression test also saves a “latest” and a “diff” image. These will be very helpful if the test fails on a remote environment (like a CI server), because then we can see the differences visually too.</p>
+
+<p class="figure"><a href="/files/image/Visual-regression-diff.png" class="image-linker"><picture><source srcset="/files/image/Visual-regression-diff.webp" type="image/webp" media="all"><img src="/files/image/Visual-regression-diff.png" alt="A Nightwatch VRT diff image" width="740" height="164" loading="lazy"></source></picture></a>
+The diff image saved into <code class="language-plaintext highlighter-rouge">./vrt/diff/huzooka/Huzooka intro.diff.png</code></p>
+
+<h3 id="my-testing-approach">My testing approach</h3>
+
+<p>My visual regression test cases are very basic:</p>
+
+<ul>
+  <li>I am testing the header and the beginning of a “lorem ipsum” post.</li>
+  <li>Then the footer and the end of the same “lorem ipsum” post.</li>
+  <li>I have an “element” test which covers standard post elements, such as:
+    <ul>
+      <li>an HTML <code class="language-plaintext highlighter-rouge">&lt;p&gt;</code> tag containing sort sentences with some emphasized, bold, striked words</li>
+      <li>HTML blockquotes</li>
+      <li>Ordered and unordered lists</li>
+      <li>Inline <code class="language-plaintext highlighter-rouge">&lt;code&gt;</code> tags and code blocks etc.</li>
+    </ul>
+  </li>
+  <li>And I also have a test which checks the spacing between elements frequently used in my posts:
+    <ul>
+      <li>Spacing between <code class="language-plaintext highlighter-rouge">&lt;p&gt;</code> and <code class="language-plaintext highlighter-rouge">&lt;p&gt;</code> tags,</li>
+      <li>Spacing between <code class="language-plaintext highlighter-rouge">&lt;p&gt;</code> tags and code blocks etc.</li>
+    </ul>
+  </li>
+</ul>
+
+<p>I have some posts and pages for these tests I don’t delete before I create the build artifact that is published - so if you’re curious and lucky<sup id="fnref:2" role="doc-noteref"><a href="#fn:2" class="footnote" rel="footnote">2</a></sup> at the same time, you can check them if you navigate to the public repository of this site and look for HTML files that’s name starts with <code class="language-plaintext highlighter-rouge">VRT-</code>.</p>
+
+<h2 id="profit">Profit</h2>
+
+<p>As you can see, we can get an evaluable amount of test coverage by a small amount of code very quickly. Although the solution I described here only uses <code class="language-plaintext highlighter-rouge">chromedriver</code>, it could be a quite solid base if you want to extend it with cross-browser testing. And if you think so, you also can improve the component tests by using <a href="https://storybook.js.org/" target="_blank" rel="noopener noreferrer">Storybook</a>.</p>
+
+<hr>
+
+<p><em>Footnotes</em>:</p>
+
+<div class="footnotes">
+  <ol>
+    <li id="fn:1" role="doc-footnote">
+      <p>It uses <a href="https://github.com/oliver-moran/jimp" target="_blank" rel="noopener noreferrer">Jimp</a> for capturing the elements based on the provided CSS selector. However, unlike me, they also worked on neatly tidying up the code and documenting it. Many thanks! <a href="#fnref:1" class="reversefootnote" role="doc-backlink">↩</a></p>
+    </li>
+    <li id="fn:2" role="doc-footnote">
+      <p>I used to change my mind sometimes, so it can happen that at the time you read this post the visual regression test pages aren’t available anymore. I’m sorry about that! <a href="#fnref:2" class="reversefootnote" role="doc-backlink">↩</a></p>
+    </li>
+  </ol>
+</div>
+
+    </div>
+<div class="tags rhythm-onehalf">
+        <strong>Tagged with:</strong>
+        
+        <a class="postmeta__item postmeta__item--tag label" href="https://huzooka.github.io/tag/visual-regression">Visual Regression</a>
+        
+        <a class="postmeta__item postmeta__item--tag label" href="https://huzooka.github.io/tag/nightwatch-vrt">Nightwatch VRT</a>
+        
+        <a class="postmeta__item postmeta__item--tag label" href="https://huzooka.github.io/tag/nightwatch-js">Nightwatch.js</a>
+        
+        <a class="postmeta__item postmeta__item--tag label" href="https://huzooka.github.io/tag/testing">Testing</a>
+        
+    </div>
+<a class="u-url" href="/development/2022/06/05/frontend-regression.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="footer h-card bg-dark">
+    <data class="u-url" href="/"></data>
+
+    <div class="wrapper">
+        <div class="footer__row">
+            <div class="footer__col footer__col--slogan">
+                <div class="slogan">
+                    <span class="logo slogan__logo"></span>
+                    <p class="slogan__slogan">The Github Page where I temporarily publish my professional posts</p>
+                </div>
+            </div>
+
+            <div class="footer__col">
+<ul class="menu-list font-heading">
+<li class="menu-list__item h4">
+        <a href="/about/">About</a>
+    </li>
+<li class="menu-list__item h4">
+        <a href="https://huzooka.github.io/tag/drupal">Drupal</a>
+    </li>
+<li class="menu-list__item h4">
+        <a href="https://huzooka.github.io/tag/migration">Migration</a>
+    </li>
+<li class="menu-list__item h4">
+        <a href="/feed.xml">RSS</a>
+    </li>
+</ul>
+</div>
+
+            <div class="footer__col">
+<ul class="menu-list font-heading">
+<li class="menu-list__item h4"><a href="https://drupal.org/u/huzooka" target="_blank" rel="noopener noreferrer">Drupal.org</a></li>
+<li class="menu-list__item h4"><a href="https://github.com/zolhorvath" target="_blank" rel="noopener noreferrer">Github</a></li>
+<li class="menu-list__item h4"><a href="https://www.linkedin.com/in/zoltan-attila-horvath" target="_blank" rel="noopener noreferrer">Linkedin</a></li>
+<li class="menu-list__item h4"><a href="https://www.twitter.com/huzooka" target="_blank" rel="noopener noreferrer">Twitter</a></li>
+</ul>
+</div>
+        </div>
+    </div>
+</footer>
+</body>
+
+</html>

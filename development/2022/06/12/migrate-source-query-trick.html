@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Database Query Trick for SQL-based Migrate Source Plugins | HuZooka</title>
+<meta name="generator" content="Jekyll v4.2.2">
+<meta property="og:title" content="Database Query Trick for SQL-based Migrate Source Plugins">
+<meta name="author" content="Zoltán Horváth">
+<meta property="og:locale" content="en_US">
+<meta name="description" content="How we can use DB column or DB expression aliases as migration source item identifiers.">
+<meta property="og:description" content="How we can use DB column or DB expression aliases as migration source item identifiers.">
+<link rel="canonical" href="https://huzooka.github.io/development/2022/06/12/migrate-source-query-trick.html">
+<meta property="og:url" content="https://huzooka.github.io/development/2022/06/12/migrate-source-query-trick.html">
+<meta property="og:site_name" content="HuZooka">
+<meta property="og:image" content="https://huzooka.github.io/simple.png">
+<meta property="og:type" content="article">
+<meta property="article:published_time" content="2022-06-12T04:37:37+00:00">
+<meta name="twitter:card" content="summary_large_image">
+<meta property="twitter:image" content="https://huzooka.github.io/simple.png">
+<meta property="twitter:title" content="Database Query Trick for SQL-based Migrate Source Plugins">
+<meta name="twitter:site" content="@huzooka">
+<meta name="twitter:creator" content="@huzooka">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Zoltán Horváth"},"dateModified":"2022-06-12T04:37:37+00:00","datePublished":"2022-06-12T04:37:37+00:00","description":"How we can use DB column or DB expression aliases as migration source item identifiers.","headline":"Database Query Trick for SQL-based Migrate Source Plugins","image":"https://huzooka.github.io/simple.png","mainEntityOfPage":{"@type":"WebPage","@id":"https://huzooka.github.io/development/2022/06/12/migrate-source-query-trick.html"},"url":"https://huzooka.github.io/development/2022/06/12/migrate-source-query-trick.html"}</script>
+
+<link rel="stylesheet" href="/assets/main.css?f3f2fc8c">
+<link type="application/atom+xml" rel="alternate" href="https://huzooka.github.io/feed.xml" title="HuZooka">
+<link rel="icon" href="/favicon.ico?b6c405af" type="image/vnd.microsoft.icon">
+    <link rel="preload" href="/assets/texb-875-125.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+    <link rel="preload" href="/assets/charissilr.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+    <link rel="preload" href="/assets/charissilb.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+</head>
+<body>
+<header class="site-header">
+
+    <div class="wrapper">
+<a class="site-title h3" rel="author" href="/">
+            <span class="logo logo--header"></span>HuZooka
+        </a><nav class="site-nav">
+            <input type="checkbox" id="nav-trigger" class="nav-trigger">
+            <label for="nav-trigger" class="menu-icon">
+                <span class="menu-icon__bar"></span>
+                <span class="menu-icon__bar"></span>
+                <span class="menu-icon__bar"></span>
+            </label>
+
+            <div class="trigger">
+<a class="nav-link h5" href="/about/">About</a><a class="nav-link h5" href="https://huzooka.github.io/tag/drupal">Drupal</a><a class="nav-link h5" href="https://huzooka.github.io/tag/migration">Migration</a>
+</div>
+        </nav>
+</div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+    <header class="post-header">
+        <h1 class="post-title p-name" itemprop="name headline">Database Query Trick for<br>
+SQL-based Migrate Source Plugins<br>
+</h1>
+
+        <p class="postmeta">
+            <time class="dt-published" datetime="2022-06-12T04:37:37+00:00" itemprop="datePublished">June 12, 2022
+            </time>• <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span class="p-author h-card" itemprop="name">Zoltán Horváth</span></span></p>
+    </header>
+
+    <div class="post-content e-content rhythm-onehalf" itemprop="articleBody">
+        <p class="lead">In my previous post about <a href="/development/2022/05/29/empty-properties-change-tracking.html">strange empty destination property handling</a> I mentioned <a href="https://www.drupal.org/u/yashrode" target="_blank" rel="noopener noreferrer">Yash Rode</a>’s brilliant <a href="https://drupal.org/i/3272705" target="_blank" rel="noopener noreferrer">YouTube field → media migration</a> feature. But I missed taking a note about a crucial trick we used there: how we managed to use a column alias as migration source item identifier.</p>
+
+<h2 id="the-problem">The problem</h2>
+
+<p>Let’s suppose there are multiple YouTube fields on the source Drupal 7 site! Each of them have different field names, so the field property column names are also different:</p>
+
+<div class="table-wrapper"><table>
+  <thead>
+    <tr>
+      <th style="text-align: left">Field name</th>
+      <th style="text-align: left">Input property column</th>
+      <th style="text-align: left">Video ID column</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="text-align: left"><code class="language-plaintext highlighter-rouge">field_yt_foo</code></td>
+      <td style="text-align: left"><code class="language-plaintext highlighter-rouge">field_yt_foo_input</code></td>
+      <td style="text-align: left"><code class="language-plaintext highlighter-rouge">field_yt_foo_video_id</code></td>
+    </tr>
+    <tr>
+      <td style="text-align: left"><code class="language-plaintext highlighter-rouge">field_yt_bar</code></td>
+      <td style="text-align: left"><code class="language-plaintext highlighter-rouge">field_yt_bar_input</code></td>
+      <td style="text-align: left"><code class="language-plaintext highlighter-rouge">field_yt_bar_video_id</code></td>
+    </tr>
+    <tr>
+      <td style="text-align: left"><code class="language-plaintext highlighter-rouge">field_yt_baz</code></td>
+      <td style="text-align: left"><code class="language-plaintext highlighter-rouge">field_yt_baz_input</code></td>
+      <td style="text-align: left"><code class="language-plaintext highlighter-rouge">field_yt_baz_video_id</code></td>
+    </tr>
+  </tbody>
+</table></div>
+
+<p>In Drupal’s Migrate API, SQL-based source plugins <a href="https://git.drupalcode.org/project/drupal/-/blob/3aaef92fe5/core/modules/migrate/src/Plugin/migrate/source/SqlBase.php#L379-L382" target="_blank" rel="noopener noreferrer">should return a database select query</a> (a <code class="language-plaintext highlighter-rouge">Drupal\Core\Database\Query\SelectInterface</code>). But how can we get all the data in a single database query? Well, we can’t. But we can use a separate query to get the list of the field names with the specified type:</p>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr>
+<td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+</pre></td>
+<td class="rouge-code"><pre><span class="k">protected</span> <span class="k">function</span> <span class="n">getYouTubeFieldNames</span><span class="p">():</span> <span class="kt">array</span> <span class="p">{</span>
+  <span class="nv">$youtube_fields</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="nf">select</span><span class="p">(</span><span class="s1">'field_config'</span><span class="p">)</span>
+    <span class="o">-&gt;</span><span class="nf">fields</span><span class="p">(</span><span class="s1">'field_config'</span><span class="p">,</span> <span class="p">[</span><span class="s1">'field_name'</span><span class="p">])</span>
+    <span class="o">-&gt;</span><span class="nf">condition</span><span class="p">(</span><span class="s1">'type'</span><span class="p">,</span> <span class="s1">'youtube'</span><span class="p">)</span>
+    <span class="o">-&gt;</span><span class="nf">condition</span><span class="p">(</span><span class="s1">'module'</span><span class="p">,</span> <span class="s1">'youtube'</span><span class="p">)</span>
+    <span class="o">-&gt;</span><span class="nf">execute</span><span class="p">()</span>
+    <span class="o">-&gt;</span><span class="nf">fetchAllKeyed</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+
+  <span class="k">return</span> <span class="nb">array_values</span><span class="p">(</span><span class="nv">$youtube_fields</span><span class="p">);</span>
+<span class="p">}</span>
+</pre></td>
+</tr></tbody></table></code></pre></div></div>
+
+<p>…Then use the list to build a <code class="language-plaintext highlighter-rouge">UNION</code> query (the <code class="language-plaintext highlighter-rouge">static::addUnionQuery()</code> is explained in this<sup id="fnref:union" role="doc-noteref"><a href="#fn:union" class="footnote" rel="footnote">1</a></sup> footnote):</p>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr>
+<td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+</pre></td>
+<td class="rouge-code"><pre><span class="cd">/**
+ * {@inheritdoc}
+ */</span>
+<span class="k">public</span> <span class="k">function</span> <span class="n">query</span><span class="p">()</span> <span class="p">{</span>
+  <span class="nv">$union_query</span> <span class="o">=</span> <span class="kc">NULL</span><span class="p">;</span>
+  <span class="k">foreach</span> <span class="p">(</span><span class="nv">$this</span><span class="o">-&gt;</span><span class="nf">getYouTubeFieldNames</span><span class="p">()</span> <span class="k">as</span> <span class="nv">$field_name</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nv">$subquery</span> <span class="o">=</span> <span class="nv">$this</span>
+      <span class="o">-&gt;</span><span class="nf">select</span><span class="p">(</span><span class="s2">"field_data_</span><span class="nv">$field_name</span><span class="s2">"</span><span class="p">,</span> <span class="nv">$field_name</span><span class="p">)</span>
+      <span class="o">-&gt;</span><span class="nf">fields</span><span class="p">(</span><span class="s2">"field_data_</span><span class="si">{</span><span class="nv">$field_name</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="p">[</span><span class="s2">"</span><span class="si">{</span><span class="nv">$field_name</span><span class="si">}</span><span class="s2">_input"</span><span class="p">]);</span>
+    <span class="k">static</span><span class="o">::</span><span class="nf">addUnionQuery</span><span class="p">(</span><span class="nv">$union_query</span><span class="p">,</span> <span class="nv">$subquery</span><span class="p">);</span>
+  <span class="p">}</span>
+  <span class="k">return</span> <span class="nv">$union_query</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></td>
+</tr></tbody></table></code></pre></div></div>
+
+<p>Query string:</p>
+<div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr>
+<td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+</pre></td>
+<td class="rouge-code"><pre><span class="k">SELECT</span>
+  <span class="nv">"field_data_field_yt_foo"</span><span class="p">.</span><span class="nv">"field_yt_foo_input"</span> <span class="k">AS</span> <span class="nv">"field_yt_foo_input"</span>
+<span class="k">FROM</span> <span class="p">{</span><span class="n">field_data_field_yt_foo</span><span class="p">}</span> <span class="nv">"field_yt_foo"</span>
+<span class="k">UNION</span>
+<span class="k">SELECT</span>
+  <span class="nv">"field_data_field_yt_bar"</span><span class="p">.</span><span class="nv">"field_yt_bar_input"</span> <span class="k">AS</span> <span class="nv">"field_yt_bar_input"</span>
+<span class="k">FROM</span> <span class="p">{</span><span class="n">field_data_field_yt_bar</span><span class="p">}</span> <span class="nv">"field_yt_bar"</span>
+<span class="k">UNION</span>
+<span class="k">SELECT</span>
+  <span class="nv">"field_data_field_yt_baz"</span><span class="p">.</span><span class="nv">"field_yt_baz_input"</span> <span class="k">AS</span> <span class="nv">"field_yt_baz_input"</span>
+<span class="k">FROM</span> <span class="p">{</span><span class="n">field_data_field_yt_baz</span><span class="p">}</span> <span class="nv">"field_yt_baz"</span>
+</pre></td>
+</tr></tbody></table></code></pre></div></div>
+
+<p>Unfortunately, we cannot really use this query as the iterator source of our migrate source: Migrate source plugins must specify which columns are identifying a single migration row. (These are called “<em>source IDs</em>”.) The identifier<sup id="fnref:idplural" role="doc-noteref"><a href="#fn:idplural" class="footnote" rel="footnote">2</a></sup> should be unique for every migrate source item. If they aren’t unique, every next item with the same ID will be ignored during the migration<sup id="fnref:2" role="doc-noteref"><a href="#fn:2" class="footnote" rel="footnote">3</a></sup>.</p>
+
+<p>So instead of using the name of the <code class="language-plaintext highlighter-rouge">input</code> field property, let’s use an alias, and define the alias as source item identifier!</p>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr>
+<td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+</pre></td>
+<td class="rouge-code"><pre><span class="cd">/**
+ * {@inheritdoc}
+ */</span>
+<span class="k">public</span> <span class="k">function</span> <span class="n">query</span><span class="p">()</span> <span class="p">{</span>
+  <span class="nv">$union_query</span> <span class="o">=</span> <span class="kc">NULL</span><span class="p">;</span>
+  <span class="k">foreach</span> <span class="p">(</span><span class="nv">$this</span><span class="o">-&gt;</span><span class="nf">getYouTubeFieldNames</span><span class="p">()</span> <span class="k">as</span> <span class="nv">$field_name</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nv">$subquery</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="nf">select</span><span class="p">(</span><span class="s2">"field_data_</span><span class="nv">$field_name</span><span class="s2">"</span><span class="p">,</span> <span class="nv">$field_name</span><span class="p">);</span>
+    <span class="nv">$subquery</span><span class="o">-&gt;</span><span class="nf">addField</span><span class="p">(</span><span class="nv">$field_name</span><span class="p">,</span> <span class="s2">"</span><span class="si">{</span><span class="nv">$field_name</span><span class="si">}</span><span class="s2">_input"</span><span class="p">,</span> <span class="s1">'input'</span><span class="p">);</span>
+    <span class="k">static</span><span class="o">::</span><span class="nf">addUnionQuery</span><span class="p">(</span><span class="nv">$union_query</span><span class="p">,</span> <span class="nv">$subquery</span><span class="p">);</span>
+  <span class="p">}</span>
+  <span class="k">return</span> <span class="nv">$union_query</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="cd">/**
+ * {@inheritdoc}
+ */</span>
+<span class="k">public</span> <span class="k">function</span> <span class="n">getIds</span><span class="p">()</span> <span class="p">{</span>
+  <span class="k">return</span> <span class="p">[</span><span class="s1">'input'</span> <span class="o">=&gt;</span> <span class="p">[</span><span class="s1">'type'</span> <span class="o">=&gt;</span> <span class="s1">'string'</span><span class="p">]];</span>
+<span class="p">}</span>
+</pre></td>
+</tr></tbody></table></code></pre></div></div>
+
+<p>Query string:</p>
+<div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr>
+<td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+</pre></td>
+<td class="rouge-code"><pre><span class="k">SELECT</span>
+  <span class="nv">"field_data_field_yt_foo"</span><span class="p">.</span><span class="nv">"field_yt_foo_input"</span> <span class="k">AS</span> <span class="nv">"input"</span>
+<span class="k">FROM</span> <span class="p">{</span><span class="n">field_data_field_yt_foo</span><span class="p">}</span> <span class="nv">"field_yt_foo"</span>
+<span class="k">UNION</span>
+<span class="k">SELECT</span>
+  <span class="nv">"field_data_field_yt_bar"</span><span class="p">.</span><span class="nv">"field_yt_bar_input"</span> <span class="k">AS</span> <span class="nv">"input"</span>
+<span class="k">FROM</span> <span class="p">{</span><span class="n">field_data_field_yt_bar</span><span class="p">}</span> <span class="nv">"field_yt_bar"</span>
+<span class="k">UNION</span>
+<span class="k">SELECT</span>
+  <span class="nv">"field_data_field_yt_baz"</span><span class="p">.</span><span class="nv">"field_yt_baz_input"</span> <span class="k">AS</span> <span class="nv">"input"</span>
+<span class="k">FROM</span> <span class="p">{</span><span class="n">field_data_field_yt_baz</span><span class="p">}</span> <span class="nv">"field_yt_baz"</span>
+</pre></td>
+</tr></tbody></table></code></pre></div></div>
+
+<p>But this is still wrong! Although the query works as expected, but as soon as we try to use joinable source and ID map databases, we will have an ugly message in our migrate kernel test:</p>
+<pre><code class="language-cli">Migration failed with source plugin exception: SQLSTATE[42703]: Undefined column: 7  ERROR:  column "input" does not exist
+LINE 4: ...ublic.60254974m_map_d7_youtube_field "map" ON input = ma...
+                                                             ^: 
+SELECT "field_yt_foo"."field_yt_foo_input" AS "input", "map"."sourceid1" AS "migrate_map_sourceid1", "map"."source_row_status" AS "migrate_map_source_row_status"
+FROM
+"602549740field_data_field_yt_foo" "field_yt_foo"
+LEFT OUTER JOIN .public.60254974m_map_d7_youtube_field "map" ON input = map.sourceid1
+WHERE ("map"."sourceid1" IS NULL) OR ("map"."source_row_status" = :db_condition_placeholder_0) UNION SELECT "field_yt_bar"."field_yt_bar_input" AS "input"
+FROM
+"602549740field_data_field_yt_bar" "field_yt_bar" UNION SELECT "field_yt_baz"."field_yt_baz_input" AS "input"
+FROM
+"602549740field_data_field_yt_baz" "field_yt_baz"; Array
+(
+  [:db_condition_placeholder_0] =&lt;; 1
+)
+in /Users/zoli/projects/media_migration/zdev/public_html/core/lib/Drupal/Core/Database/ExceptionHandler.php line 79
+</code></pre>
+
+<p>In essence this happens because the source plugin tries to exclude the source records from the database query which are already migrated. Although the outer joined query SqlBase has added is unaware of that we have a UNION query, the exception totally makes sense: We really don’t have an “input” column – since it’s just an alias of the <code class="language-plaintext highlighter-rouge">field_yt_foo_input</code>, <code class="language-plaintext highlighter-rouge">field_yt_bar_input</code> and <code class="language-plaintext highlighter-rouge">field_yt_baz_input</code> columns.</p>
+
+<h2 id="the-solution">The solution</h2>
+
+<p>Just check out <a href="https://git.drupalcode.org/project/drupal/-/blob/3aaef92fe5/core/lib/Drupal/Core/Database/Connection.php#L1197-1215" target="_blank" rel="noopener noreferrer">the docblock of <code class="language-plaintext highlighter-rouge">Drupal\Core\Database\Connection::select()</code></a>, focusing on the type of the first method parameter<sup id="fnref:4" role="doc-noteref"><a href="#fn:4" class="footnote" rel="footnote">4</a></sup>! 🧐</p>
+
+<blockquote>
+  <p>@param <code class="language-plaintext highlighter-rouge">string</code>|<code class="language-plaintext highlighter-rouge">\Drupal\Core\Database\Query\SelectInterface</code> <code class="language-plaintext highlighter-rouge">$table</code></p>
+
+  <p>The base table name or subquery for this query, used in the FROM clause. If a string, the table specified will also be used as the “base” table for query_alter hook implementations.</p>
+</blockquote>
+
+<p>Because of the name of the variable, we all<sup id="fnref:3" role="doc-noteref"><a href="#fn:3" class="footnote" rel="footnote">5</a></sup> think that <code class="language-plaintext highlighter-rouge">$table</code> must be a string – the name of the table – but it <strong>can be</strong> either <strong>a select statement</strong>! And this is the essence of our solution as well: <em>We wrap the “big” union query into a new query</em>, which then allows us to use any kind of alias as source item identifier – be it a column alias or alias of a complex SQL expression!</p>
+
+<p>It’s that simple:</p>
+
+<div class="language-php highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr>
+<td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+</pre></td>
+<td class="rouge-code"><pre><span class="cd">/**
+ * {@inheritdoc}
+ */</span>
+<span class="k">public</span> <span class="k">function</span> <span class="n">query</span><span class="p">()</span> <span class="p">{</span>
+  <span class="nv">$union_query</span> <span class="o">=</span> <span class="kc">NULL</span><span class="p">;</span>
+  <span class="k">foreach</span> <span class="p">(</span><span class="nv">$this</span><span class="o">-&gt;</span><span class="nf">getYoutubeFieldNames</span><span class="p">()</span> <span class="k">as</span> <span class="nv">$field_name</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nv">$subquery</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="nf">select</span><span class="p">(</span><span class="s2">"field_data_</span><span class="nv">$field_name</span><span class="s2">"</span><span class="p">,</span> <span class="nv">$field_name</span><span class="p">);</span>
+    <span class="nv">$subquery</span><span class="o">-&gt;</span><span class="nf">addField</span><span class="p">(</span><span class="nv">$field_name</span><span class="p">,</span> <span class="s2">"</span><span class="si">{</span><span class="nv">$field_name</span><span class="si">}</span><span class="s2">_input"</span><span class="p">,</span> <span class="s1">'input'</span><span class="p">);</span>
+    <span class="k">static</span><span class="o">::</span><span class="nf">addUnionQuery</span><span class="p">(</span><span class="nv">$union_query</span><span class="p">,</span> <span class="nv">$subquery</span><span class="p">);</span>
+  <span class="p">}</span>
+  <span class="nv">$wrapper_query</span> <span class="o">=</span> <span class="nv">$this</span><span class="o">-&gt;</span><span class="nf">select</span><span class="p">(</span><span class="nv">$union_query</span><span class="p">,</span> <span class="s1">'all_yt'</span><span class="p">)</span><span class="o">-&gt;</span><span class="nf">fields</span><span class="p">(</span><span class="s1">'all_yt'</span><span class="p">);</span>
+  <span class="nv">$wrapper_query</span><span class="o">-&gt;</span><span class="nf">orderBy</span><span class="p">(</span><span class="s1">'all_yt.input'</span><span class="p">);</span>
+  <span class="k">return</span> <span class="nv">$wrapper_query</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></td>
+</tr></tbody></table></code></pre></div></div>
+
+<p>This is the query string of the Drupal select above:</p>
+<div class="language-sql highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr>
+<td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+</pre></td>
+<td class="rouge-code"><pre><span class="k">SELECT</span> 
+  <span class="nv">"all_yt"</span><span class="p">.</span><span class="o">*</span>
+<span class="k">FROM</span> <span class="p">(</span>
+  <span class="k">SELECT</span>
+    <span class="nv">"field_data_field_yt_foo"</span><span class="p">.</span><span class="nv">"field_yt_foo_input"</span> <span class="k">AS</span> <span class="nv">"input"</span>
+  <span class="k">FROM</span> <span class="p">{</span><span class="n">field_data_field_yt_foo</span><span class="p">}</span> <span class="nv">"field_yt_foo"</span>
+  <span class="k">UNION</span>
+  <span class="k">SELECT</span>
+    <span class="nv">"field_data_field_yt_bar"</span><span class="p">.</span><span class="nv">"field_yt_bar_input"</span> <span class="k">AS</span> <span class="nv">"input"</span>
+  <span class="k">FROM</span> <span class="p">{</span><span class="n">field_data_field_yt_bar</span><span class="p">}</span> <span class="nv">"field_yt_bar"</span>
+  <span class="k">UNION</span>
+  <span class="k">SELECT</span>
+    <span class="nv">"field_data_field_yt_baz"</span><span class="p">.</span><span class="nv">"field_yt_baz_input"</span> <span class="k">AS</span> <span class="nv">"input"</span>
+  <span class="k">FROM</span> <span class="p">{</span><span class="n">field_data_field_yt_baz</span><span class="p">}</span> <span class="nv">"field_yt_baz"</span>
+<span class="p">)</span> <span class="nv">"all_yt"</span>
+<span class="k">ORDER</span> <span class="k">BY</span> <span class="nv">"all_yt"</span><span class="p">.</span><span class="nv">"input"</span> <span class="k">ASC</span> <span class="n">NULLS</span> <span class="k">FIRST</span>
+</pre></td>
+</tr></tbody></table></code></pre></div></div>
+
+<p>Have nice <em>database queries</em>! 🙂</p>
+
+<hr>
+
+<p><em>Footnotes</em>:</p>
+
+<div class="footnotes">
+  <ol>
+    <li id="fn:union" role="doc-footnote">
+      <p>This <code class="language-plaintext highlighter-rouge">::addUnionQuery()</code> is a very simple helper function:</p>
+
+      <div class="language-php highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr>
+<td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+</pre></td>
+<td class="rouge-code"><pre><span class="k">protected</span> <span class="k">static</span> <span class="k">function</span> <span class="n">addUnionQuery</span><span class="p">(</span><span class="o">&amp;</span><span class="nv">$union_destination</span><span class="p">,</span> <span class="nc">SelectInterface</span> <span class="nv">$query</span><span class="p">)</span><span class="o">:</span> <span class="n">void</span> <span class="p">{</span>
+  <span class="k">if</span> <span class="p">(</span><span class="nv">$union_destination</span> <span class="k">instanceof</span> <span class="nc">SelectInterface</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nv">$union_destination</span><span class="o">-&gt;</span><span class="nf">union</span><span class="p">(</span><span class="nv">$query</span><span class="p">);</span>
+    <span class="k">return</span><span class="p">;</span>
+  <span class="p">}</span>
+  <span class="nv">$union_destination</span> <span class="o">=</span> <span class="k">clone</span> <span class="nv">$query</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></td>
+</tr></tbody></table></code></pre></div>      </div>
+
+      <p>If the destination query is empty, then it just sets <code class="language-plaintext highlighter-rouge">$destination</code> to the clone of the source query. But if it is already a <code class="language-plaintext highlighter-rouge">SelectInterface</code>, then it ‘unions’ the two queries. <a href="#fnref:union" class="reversefootnote" role="doc-backlink">↩</a></p>
+    </li>
+    <li id="fn:idplural" role="doc-footnote">
+      <p>We can define multiple identifiers too. <a href="#fnref:idplural" class="reversefootnote" role="doc-backlink">↩</a></p>
+    </li>
+    <li id="fn:2" role="doc-footnote">
+      <p>This is a very handy feature! It is actively used in Drupal core migrate source plugins too: This is why <code class="language-plaintext highlighter-rouge">d7_field</code> and <code class="language-plaintext highlighter-rouge">d7_field_instance</code> can use the same database query to get their source data. <a href="#fnref:2" class="reversefootnote" role="doc-backlink">↩</a></p>
+    </li>
+    <li id="fn:4" role="doc-footnote">
+      <p>This option is available in <code class="language-plaintext highlighter-rouge">::join()</code>, <code class="language-plaintext highlighter-rouge">::isNull()</code> etc too. As well as in <code class="language-plaintext highlighter-rouge">::union()</code>! 😉 <a href="#fnref:4" class="reversefootnote" role="doc-backlink">↩</a></p>
+    </li>
+    <li id="fn:3" role="doc-footnote">
+      <p>Or at least I’ve only known about this feature for two years (since 2020, when I started working on migrations). <a href="#fnref:3" class="reversefootnote" role="doc-backlink">↩</a></p>
+    </li>
+  </ol>
+</div>
+
+    </div>
+<div class="tags rhythm-onehalf">
+        <strong>Tagged with:</strong>
+        
+        <a class="postmeta__item postmeta__item--tag label" href="https://huzooka.github.io/tag/drupal">Drupal</a>
+        
+        <a class="postmeta__item postmeta__item--tag label" href="https://huzooka.github.io/tag/database-api">Database API</a>
+        
+        <a class="postmeta__item postmeta__item--tag label" href="https://huzooka.github.io/tag/migration">Migration</a>
+        
+    </div>
+<a class="u-url" href="/development/2022/06/12/migrate-source-query-trick.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="footer h-card bg-dark">
+    <data class="u-url" href="/"></data>
+
+    <div class="wrapper">
+        <div class="footer__row">
+            <div class="footer__col footer__col--slogan">
+                <div class="slogan">
+                    <span class="logo slogan__logo"></span>
+                    <p class="slogan__slogan">The Github Page where I temporarily publish my professional posts</p>
+                </div>
+            </div>
+
+            <div class="footer__col">
+<ul class="menu-list font-heading">
+<li class="menu-list__item h4">
+        <a href="/about/">About</a>
+    </li>
+<li class="menu-list__item h4">
+        <a href="https://huzooka.github.io/tag/drupal">Drupal</a>
+    </li>
+<li class="menu-list__item h4">
+        <a href="https://huzooka.github.io/tag/migration">Migration</a>
+    </li>
+<li class="menu-list__item h4">
+        <a href="/feed.xml">RSS</a>
+    </li>
+</ul>
+</div>
+
+            <div class="footer__col">
+<ul class="menu-list font-heading">
+<li class="menu-list__item h4"><a href="https://drupal.org/u/huzooka" target="_blank" rel="noopener noreferrer">Drupal.org</a></li>
+<li class="menu-list__item h4"><a href="https://github.com/zolhorvath" target="_blank" rel="noopener noreferrer">Github</a></li>
+<li class="menu-list__item h4"><a href="https://www.linkedin.com/in/zoltan-attila-horvath" target="_blank" rel="noopener noreferrer">Linkedin</a></li>
+<li class="menu-list__item h4"><a href="https://www.twitter.com/huzooka" target="_blank" rel="noopener noreferrer">Twitter</a></li>
+</ul>
+</div>
+        </div>
+    </div>
+</footer>
+</body>
+
+</html>

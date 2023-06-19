@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Video File Format Support of HTML5 Video | HuZooka</title>
+<meta name="generator" content="Jekyll v4.2.2">
+<meta property="og:title" content="Video File Format Support of HTML5 Video">
+<meta name="author" content="Zoltán Horváth">
+<meta property="og:locale" content="en_US">
+<meta name="description" content="Which formats should we choose for publishing HTML5 video and how can we create them with FFmpeg.">
+<meta property="og:description" content="Which formats should we choose for publishing HTML5 video and how can we create them with FFmpeg.">
+<link rel="canonical" href="https://huzooka.github.io/development/2019/06/11/browser-video-format-support.html">
+<meta property="og:url" content="https://huzooka.github.io/development/2019/06/11/browser-video-format-support.html">
+<meta property="og:site_name" content="HuZooka">
+<meta property="og:image" content="https://huzooka.github.io/simple.png">
+<meta property="og:type" content="article">
+<meta property="article:published_time" content="2019-06-11T09:27:56+00:00">
+<meta name="twitter:card" content="summary_large_image">
+<meta property="twitter:image" content="https://huzooka.github.io/simple.png">
+<meta property="twitter:title" content="Video File Format Support of HTML5 Video">
+<meta name="twitter:site" content="@huzooka">
+<meta name="twitter:creator" content="@huzooka">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Zoltán Horváth"},"dateModified":"2019-06-11T09:27:56+00:00","datePublished":"2019-06-11T09:27:56+00:00","description":"Which formats should we choose for publishing HTML5 video and how can we create them with FFmpeg.","headline":"Video File Format Support of HTML5 Video","image":"https://huzooka.github.io/simple.png","mainEntityOfPage":{"@type":"WebPage","@id":"https://huzooka.github.io/development/2019/06/11/browser-video-format-support.html"},"url":"https://huzooka.github.io/development/2019/06/11/browser-video-format-support.html"}</script>
+
+<link rel="stylesheet" href="/assets/main.css?f3f2fc8c">
+<link type="application/atom+xml" rel="alternate" href="https://huzooka.github.io/feed.xml" title="HuZooka">
+<link rel="icon" href="/favicon.ico?b6c405af" type="image/vnd.microsoft.icon">
+    <link rel="preload" href="/assets/texb-875-125.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+    <link rel="preload" href="/assets/charissilr.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+    <link rel="preload" href="/assets/charissilb.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+</head>
+<body>
+<header class="site-header">
+
+    <div class="wrapper">
+<a class="site-title h3" rel="author" href="/">
+            <span class="logo logo--header"></span>HuZooka
+        </a><nav class="site-nav">
+            <input type="checkbox" id="nav-trigger" class="nav-trigger">
+            <label for="nav-trigger" class="menu-icon">
+                <span class="menu-icon__bar"></span>
+                <span class="menu-icon__bar"></span>
+                <span class="menu-icon__bar"></span>
+            </label>
+
+            <div class="trigger">
+<a class="nav-link h5" href="/about/">About</a><a class="nav-link h5" href="https://huzooka.github.io/tag/drupal">Drupal</a><a class="nav-link h5" href="https://huzooka.github.io/tag/migration">Migration</a>
+</div>
+        </nav>
+</div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+    <header class="post-header">
+        <h1 class="post-title p-name" itemprop="name headline">Video File Format Support of HTML5 Video</h1>
+
+        <p class="postmeta">
+            <time class="dt-published" datetime="2019-06-11T09:27:56+00:00" itemprop="datePublished">June 11, 2019
+            </time>• <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span class="p-author h-card" itemprop="name">Zoltán Horváth</span></span></p>
+    </header>
+
+    <div class="post-content e-content rhythm-onehalf" itemprop="articleBody">
+        <p class="lead">Using HTML5 <code class="language-plaintext highlighter-rouge">video</code> is a lot less painful nowadays than it was years ago. Most of the browsers which <a href="https://caniuse.com/#feat=video" target="_blank" rel="noopener noreferrer">do not support video reached</a> their EOL, so we only have to take care about choosing the right container(s) and codec(s), and we have our homework done.</p>
+
+<p><strong>The bad news</strong>: at the time of writing this article there is not a single container-codec combination that works in all (HTML5-supporting) browsers.
+<strong>The good news</strong>: with a combination of two formats (and by providing these two kinds of video formats as <code class="language-plaintext highlighter-rouge">&lt;source&gt;</code> tags inside the <code class="language-plaintext highlighter-rouge">&lt;video&gt;</code> element), we can cover almost every browser.</p>
+
+<p>I don’t want to (and I won’t) repeat here anything that’s already explained by someone else, much more professionally than I would be able to. So if you’re interested in details, please read <a href="https://en.wikipedia.org/wiki/Mark_Pilgrim" target="_blank" rel="noopener noreferrer">Mark Pilgrim’s</a> excellent article “<a href="https://diveintohtml5.info/video.html" target="_blank" rel="noopener noreferrer">Video on the Web</a>” about the background of HTML5 video support.</p>
+
+<p>If you only want to know which formats should be provided for the best coverage, here they are:</p>
+
+<ul>
+  <li>
+<strong>MP4</strong> container with <code class="language-plaintext highlighter-rouge">h.264</code> video and <code class="language-plaintext highlighter-rouge">aac</code> or <code class="language-plaintext highlighter-rouge">mp3</code>) audio channel</li>
+  <li>
+<strong>WebM</strong> container with <code class="language-plaintext highlighter-rouge">VP8</code> (<code class="language-plaintext highlighter-rouge">VP9</code>) video and <code class="language-plaintext highlighter-rouge">oog</code> audio.</li>
+</ul>
+
+<h2 id="how-can-we-convert-our-sources-to-the-formats-above-with-ffmpeg">How can we convert our sources to the formats above with FFmpeg</h2>
+
+<ul>
+  <li>
+    <p><strong>MP4</strong> container with <code class="language-plaintext highlighter-rouge">h.264</code> video and <code class="language-plaintext highlighter-rouge">aac</code> audio:</p>
+
+    <div class="language-shell highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr>
+<td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+</pre></td>
+<td class="rouge-code"><pre>ffmpeg <span class="nt">-i</span> video-input.mov <span class="se">\</span>
+  <span class="nt">-vf</span> <span class="nv">scale</span><span class="o">=</span><span class="nt">-2</span>:480:flags<span class="o">=</span>lanczos <span class="se">\</span>
+  <span class="nt">-vcodec</span> h264 <span class="se">\</span>
+  <span class="nt">-profile</span>:v baseline <span class="se">\</span>
+  <span class="nt">-level</span> 3.1 <span class="se">\</span>
+  <span class="nt">-preset</span> veryslow <span class="se">\</span>
+  <span class="nt">-acodec</span> aac <span class="se">\</span>
+  video-output.mp4
+</pre></td>
+</tr></tbody></table></code></pre></div>    </div>
+  </li>
+  <li>
+    <p><strong>WebM</strong> container with <code class="language-plaintext highlighter-rouge">VP8</code> video and <code class="language-plaintext highlighter-rouge">oog</code> audio:</p>
+
+    <div class="language-shell highlighter-rouge">
+<div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr>
+<td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+</pre></td>
+<td class="rouge-code"><pre>ffmpeg <span class="nt">-i</span> video-input.mov <span class="se">\</span>
+  <span class="nt">-vf</span> <span class="nv">scale</span><span class="o">=</span><span class="nt">-2</span>:480:flags<span class="o">=</span>lanczos <span class="se">\</span>
+  <span class="nt">-c</span>:v libvpx <span class="se">\</span>
+  <span class="nt">-crf</span> 10 <span class="se">\</span>
+  <span class="nt">-b</span>:v 1M <span class="se">\</span>
+  <span class="nt">-c</span>:a libvorbis <span class="se">\</span>
+  video-output.webm
+</pre></td>
+</tr></tbody></table></code></pre></div>    </div>
+  </li>
+</ul>
+
+<hr>
+
+<p><em>Sources (or in other words, reading list)</em>:</p>
+
+<ul>
+  <li>
+<a href="https://diveintohtml5.info/video.html" target="_blank" rel="noopener noreferrer">Video on the Web</a> by Mark Pilgrim</li>
+  <li>
+<a href="https://en.wikipedia.org/wiki/HTML5_video#Browser_support" target="_blank" rel="noopener noreferrer">HTML5 video – Browser support</a> on Wikipedia</li>
+  <li>
+<a href="https://stackoverflow.com/questions/14636415/html5-video-formats-compatibility" target="_blank" rel="noopener noreferrer">HTML5 video formats - compatibility</a> question on Stack Overflow</li>
+  <li><a href="https://mrcoles.com/convert-mov-mp4-ffmpeg/" target="_blank" rel="noopener noreferrer">Сабина Мамедова’s comment on Peter Coles’ article</a></li>
+  <li><a href="https://trac.ffmpeg.org/wiki/" target="_blank" rel="noopener noreferrer">FFmpeg Wiki</a></li>
+  <li>
+<a href="https://davidwalsh.name/html5-video" target="_blank" rel="noopener noreferrer">HTML5 Video Player Best Practices</a> by David Walsh</li>
+</ul>
+
+
+    </div>
+<div class="tags rhythm-onehalf">
+        <strong>Tagged with:</strong>
+        
+        <a class="postmeta__item postmeta__item--tag label" href="https://huzooka.github.io/tag/browser-support">Browser support</a>
+        
+    </div>
+<a class="u-url" href="/development/2019/06/11/browser-video-format-support.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="footer h-card bg-dark">
+    <data class="u-url" href="/"></data>
+
+    <div class="wrapper">
+        <div class="footer__row">
+            <div class="footer__col footer__col--slogan">
+                <div class="slogan">
+                    <span class="logo slogan__logo"></span>
+                    <p class="slogan__slogan">The Github Page where I temporarily publish my professional posts</p>
+                </div>
+            </div>
+
+            <div class="footer__col">
+<ul class="menu-list font-heading">
+<li class="menu-list__item h4">
+        <a href="/about/">About</a>
+    </li>
+<li class="menu-list__item h4">
+        <a href="https://huzooka.github.io/tag/drupal">Drupal</a>
+    </li>
+<li class="menu-list__item h4">
+        <a href="https://huzooka.github.io/tag/migration">Migration</a>
+    </li>
+<li class="menu-list__item h4">
+        <a href="/feed.xml">RSS</a>
+    </li>
+</ul>
+</div>
+
+            <div class="footer__col">
+<ul class="menu-list font-heading">
+<li class="menu-list__item h4"><a href="https://drupal.org/u/huzooka" target="_blank" rel="noopener noreferrer">Drupal.org</a></li>
+<li class="menu-list__item h4"><a href="https://github.com/zolhorvath" target="_blank" rel="noopener noreferrer">Github</a></li>
+<li class="menu-list__item h4"><a href="https://www.linkedin.com/in/zoltan-attila-horvath" target="_blank" rel="noopener noreferrer">Linkedin</a></li>
+<li class="menu-list__item h4"><a href="https://www.twitter.com/huzooka" target="_blank" rel="noopener noreferrer">Twitter</a></li>
+</ul>
+</div>
+        </div>
+    </div>
+</footer>
+</body>
+
+</html>

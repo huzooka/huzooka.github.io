@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My Development Environment | HuZooka</title>
+<meta name="generator" content="Jekyll v4.2.2">
+<meta property="og:title" content="My Development Environment">
+<meta name="author" content="Zoltán Horváth">
+<meta property="og:locale" content="en_US">
+<meta name="description" content="Steps to reproduce my local development environment.">
+<meta property="og:description" content="Steps to reproduce my local development environment.">
+<link rel="canonical" href="https://huzooka.github.io/development/2017/12/22/my-devenv.html">
+<meta property="og:url" content="https://huzooka.github.io/development/2017/12/22/my-devenv.html">
+<meta property="og:site_name" content="HuZooka">
+<meta property="og:image" content="https://huzooka.github.io/simple.png">
+<meta property="og:type" content="article">
+<meta property="article:published_time" content="2017-12-22T09:00:33+00:00">
+<meta name="twitter:card" content="summary_large_image">
+<meta property="twitter:image" content="https://huzooka.github.io/simple.png">
+<meta property="twitter:title" content="My Development Environment">
+<meta name="twitter:site" content="@huzooka">
+<meta name="twitter:creator" content="@huzooka">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Zoltán Horváth"},"dateModified":"2017-12-22T09:00:33+00:00","datePublished":"2017-12-22T09:00:33+00:00","description":"Steps to reproduce my local development environment.","headline":"My Development Environment","image":"https://huzooka.github.io/simple.png","mainEntityOfPage":{"@type":"WebPage","@id":"https://huzooka.github.io/development/2017/12/22/my-devenv.html"},"url":"https://huzooka.github.io/development/2017/12/22/my-devenv.html"}</script>
+
+<link rel="stylesheet" href="/assets/main.css?f3f2fc8c">
+<link type="application/atom+xml" rel="alternate" href="https://huzooka.github.io/feed.xml" title="HuZooka">
+<link rel="icon" href="/favicon.ico?b6c405af" type="image/vnd.microsoft.icon">
+    <link rel="preload" href="/assets/texb-875-125.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+    <link rel="preload" href="/assets/charissilr.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+    <link rel="preload" href="/assets/charissilb.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+</head>
+<body>
+<header class="site-header">
+
+    <div class="wrapper">
+<a class="site-title h3" rel="author" href="/">
+            <span class="logo logo--header"></span>HuZooka
+        </a><nav class="site-nav">
+            <input type="checkbox" id="nav-trigger" class="nav-trigger">
+            <label for="nav-trigger" class="menu-icon">
+                <span class="menu-icon__bar"></span>
+                <span class="menu-icon__bar"></span>
+                <span class="menu-icon__bar"></span>
+            </label>
+
+            <div class="trigger">
+<a class="nav-link h5" href="/about/">About</a><a class="nav-link h5" href="https://huzooka.github.io/tag/drupal">Drupal</a><a class="nav-link h5" href="https://huzooka.github.io/tag/migration">Migration</a>
+</div>
+        </nav>
+</div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+    <header class="post-header">
+        <h1 class="post-title p-name" itemprop="name headline">My Development Environment</h1>
+
+        <p class="postmeta">
+            <time class="dt-published" datetime="2017-12-22T09:00:33+00:00" itemprop="datePublished">December 22, 2017
+            </time>• <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span class="p-author h-card" itemprop="name">Zoltán Horváth</span></span></p>
+    </header>
+
+    <div class="post-content e-content rhythm-onehalf" itemprop="articleBody">
+        <p>No frills, just keywords here:</p>
+
+<ul>
+  <li>Xcode</li>
+  <li><a href="https://brew.sh/" target="_blank" rel="noopener noreferrer">Homebrew</a></li>
+  <li>My SSH + access keys</li>
+  <li>Atom</li>
+  <li>
+    <p><a href="https://atom.io/" target="_blank" rel="noopener noreferrer">MAMP</a></p>
+
+    <p>Apache:</p>
+    <ul>
+      <li>DocumentRoot and first Directory in <code class="language-plaintext highlighter-rouge">httpd.conf</code>
+</li>
+      <li>Uncomment Virtual hosts (at the bottom of the <code class="language-plaintext highlighter-rouge">httpd.conf</code> file)</li>
+      <li>
+<code class="language-plaintext highlighter-rouge">httpd-vhosts.conf</code> +<code class="language-plaintext highlighter-rouge"> /etc/hosts</code> + <code class="language-plaintext highlighter-rouge">dnsmasq</code>
+</li>
+      <li>
+<code class="language-plaintext highlighter-rouge">httpd-ssl.conf</code> + <code class="language-plaintext highlighter-rouge">keygen</code>
+</li>
+    </ul>
+
+    <p>PHP:</p>
+    <ul>
+      <li>
+<code class="language-plaintext highlighter-rouge">bin/php vers/php.ini max_input_nesting_level</code> → 1640</li>
+      <li>
+<code class="language-plaintext highlighter-rouge">max_input_vars</code> → 2000</li>
+      <li>
+<code class="language-plaintext highlighter-rouge">memory_limit</code> → 1280MB</li>
+      <li>
+<code class="language-plaintext highlighter-rouge">sendmail_path = /usr/local/Cellar/mailhog/1.0.0/bin/MailHog sendmail</code>, see later</li>
+    </ul>
+  </li>
+  <li>
+<a href="https://getcomposer.org/doc/00-intro.md#installation-linux-unix-macos" target="_blank" rel="noopener noreferrer">Composer</a> (global installation, following official docs)</li>
+  <li>A globally installed <a href="https://docs.drush.org/en/master/install/#install-a-site-local-drush-and-drush-launcher" target="_blank" rel="noopener noreferrer">Drush &amp; Drush Launcher</a>
+</li>
+  <li>
+<a href="https://www.gnupg.org/" target="_blank" rel="noopener noreferrer">GnuPG</a>: <code class="language-plaintext highlighter-rouge">brew install gnupg</code>
+</li>
+  <li>GNU Patch: <code class="language-plaintext highlighter-rouge">brew install gpatch</code>
+</li>
+  <li>
+<a href="https://github.com/mailhog/MailHog" target="_blank" rel="noopener noreferrer">MailHog</a>: <code class="language-plaintext highlighter-rouge">brew install mailhog</code>; <code class="language-plaintext highlighter-rouge">brew services start mailhog</code> → http://127.0.0.1:8025</li>
+  <li><a href="https://rvm.io/rvm/install" target="_blank" rel="noopener noreferrer">RVM</a></li>
+  <li>
+<a href="https://github.com/creationix/nvm#installation-and-update" target="_blank" rel="noopener noreferrer">NVM</a>, with a stable LTS Node.js
+    <ul>
+      <li>
+<a href="https://github.com/wbyoung/avn#install" target="_blank" rel="noopener noreferrer">AVN</a> (automatic version switching for Node.js)</li>
+      <li>Yarn: <code class="language-plaintext highlighter-rouge">brew install yarn --without-node</code>
+</li>
+    </ul>
+  </li>
+  <li>
+<a href="https://yousseb.github.io/meld/" target="_blank" rel="noopener noreferrer">Meld</a>
+Here I had to trick a bit for a working cli command…</li>
+  <li>
+<a href="https://www.oracle.com/technetwork/java/javase/downloads/index.html" target="_blank" rel="noopener noreferrer">Java SDK</a> (JDK is not enough!)</li>
+  <li><a href="http://lucene.apache.org/solr/mirrors-solr-latest-redir.html" target="_blank" rel="noopener noreferrer">Apache Solr</a></li>
+  <li><a href="https://www.adampatterson.ca/2017/enabling-memcached-mamp4/" target="_blank" rel="noopener noreferrer">Memcached</a></li>
+  <li><a href="https://tunnelblick.net/" target="_blank" rel="noopener noreferrer">Tunnelblick</a></li>
+  <li><a href="https://www.sequelpro.com/" target="_blank" rel="noopener noreferrer">Sequel Pro</a></li>
+  <li>
+<a href="https://www.seleniumhq.org/download/" target="_blank" rel="noopener noreferrer">Selenium Server</a>, chromedriver, geckodriver</li>
+  <li><a href="https://developer.android.com/studio/install" target="_blank" rel="noopener noreferrer">Android Studio</a></li>
+  <li><a href="http://appium.io/" target="_blank" rel="noopener noreferrer">Appium</a></li>
+  <li><a href="https://www.getpostman.com/postman" target="_blank" rel="noopener noreferrer">Postman</a></li>
+  <li><a href="https://www.virtualbox.org/" target="_blank" rel="noopener noreferrer">VirtualBox</a></li>
+  <li>
+<a href="https://www.docker.com/get-started" target="_blank" rel="noopener noreferrer">Docker</a>
+I think I follow the official docs…</li>
+  <li>…and my private git repository for <code class="language-plaintext highlighter-rouge">/[Users|usr]/[myuser]/</code> that provides:
+    <ul>
+      <li>global git configs</li>
+      <li>the global <code class="language-plaintext highlighter-rouge">.gitignore</code>
+</li>
+      <li>my bash aliases</li>
+      <li>my custom prompt</li>
+      <li>my [ba]sh exports</li>
+      <li>a customized MySQL configuration (<code class="language-plaintext highlighter-rouge">.my.cnf</code>; with some innodb and other overrides)</li>
+    </ul>
+
+    <p>…and contains my custom (bash) scripts:</p>
+    <ul>
+      <li>config-hash remover for Drupal 8 configuration</li>
+      <li>git completion script for cli</li>
+      <li><code class="language-plaintext highlighter-rouge">net-back-alert.sh</code></li>
+      <li><code class="language-plaintext highlighter-rouge">net-lost-alert.sh</code></li>
+    </ul>
+  </li>
+</ul>
+
+    </div>
+<div class="tags rhythm-onehalf">
+        <strong>Tagged with:</strong>
+        
+        <a class="postmeta__item postmeta__item--tag label" href="https://huzooka.github.io/tag/devenv">Devenv</a>
+        
+        <a class="postmeta__item postmeta__item--tag label" href="https://huzooka.github.io/tag/macos">macOS</a>
+        
+        <a class="postmeta__item postmeta__item--tag label" href="https://huzooka.github.io/tag/mamp">MAMP</a>
+        
+    </div>
+<a class="u-url" href="/development/2017/12/22/my-devenv.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="footer h-card bg-dark">
+    <data class="u-url" href="/"></data>
+
+    <div class="wrapper">
+        <div class="footer__row">
+            <div class="footer__col footer__col--slogan">
+                <div class="slogan">
+                    <span class="logo slogan__logo"></span>
+                    <p class="slogan__slogan">The Github Page where I temporarily publish my professional posts</p>
+                </div>
+            </div>
+
+            <div class="footer__col">
+<ul class="menu-list font-heading">
+<li class="menu-list__item h4">
+        <a href="/about/">About</a>
+    </li>
+<li class="menu-list__item h4">
+        <a href="https://huzooka.github.io/tag/drupal">Drupal</a>
+    </li>
+<li class="menu-list__item h4">
+        <a href="https://huzooka.github.io/tag/migration">Migration</a>
+    </li>
+<li class="menu-list__item h4">
+        <a href="/feed.xml">RSS</a>
+    </li>
+</ul>
+</div>
+
+            <div class="footer__col">
+<ul class="menu-list font-heading">
+<li class="menu-list__item h4"><a href="https://drupal.org/u/huzooka" target="_blank" rel="noopener noreferrer">Drupal.org</a></li>
+<li class="menu-list__item h4"><a href="https://github.com/zolhorvath" target="_blank" rel="noopener noreferrer">Github</a></li>
+<li class="menu-list__item h4"><a href="https://www.linkedin.com/in/zoltan-attila-horvath" target="_blank" rel="noopener noreferrer">Linkedin</a></li>
+<li class="menu-list__item h4"><a href="https://www.twitter.com/huzooka" target="_blank" rel="noopener noreferrer">Twitter</a></li>
+</ul>
+</div>
+        </div>
+    </div>
+</footer>
+</body>
+
+</html>

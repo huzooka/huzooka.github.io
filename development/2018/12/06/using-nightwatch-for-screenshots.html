@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>How We Use Nightwatch.js for Developing Claro Theme | HuZooka</title>
+<meta name="generator" content="Jekyll v4.2.2">
+<meta property="og:title" content="How We Use Nightwatch.js for Developing Claro Theme">
+<meta name="author" content="Zoltán Horváth">
+<meta property="og:locale" content="en_US">
+<meta name="description" content="Nightwatch.js was a huge help in developing the Claro theme. In this post, we will walk around the solutions I developed for taking full page screenshots in various environments.">
+<meta property="og:description" content="Nightwatch.js was a huge help in developing the Claro theme. In this post, we will walk around the solutions I developed for taking full page screenshots in various environments.">
+<link rel="canonical" href="https://huzooka.github.io/development/2018/12/06/using-nightwatch-for-screenshots.html">
+<meta property="og:url" content="https://huzooka.github.io/development/2018/12/06/using-nightwatch-for-screenshots.html">
+<meta property="og:site_name" content="HuZooka">
+<meta property="og:image" content="https://user-images.githubusercontent.com/9197058/49235339-31f03700-f3fa-11e8-9153-27e889a2d533.png">
+<meta property="og:type" content="article">
+<meta property="article:published_time" content="2018-12-06T20:18:55+00:00">
+<meta name="twitter:card" content="summary_large_image">
+<meta property="twitter:image" content="https://user-images.githubusercontent.com/9197058/49235339-31f03700-f3fa-11e8-9153-27e889a2d533.png">
+<meta property="twitter:title" content="How We Use Nightwatch.js for Developing Claro Theme">
+<meta name="twitter:site" content="@huzooka">
+<meta name="twitter:creator" content="@huzooka">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Zoltán Horváth"},"dateModified":"2018-12-06T20:18:55+00:00","datePublished":"2018-12-06T20:18:55+00:00","description":"Nightwatch.js was a huge help in developing the Claro theme. In this post, we will walk around the solutions I developed for taking full page screenshots in various environments.","headline":"How We Use Nightwatch.js for Developing Claro Theme","image":"https://user-images.githubusercontent.com/9197058/49235339-31f03700-f3fa-11e8-9153-27e889a2d533.png","mainEntityOfPage":{"@type":"WebPage","@id":"https://huzooka.github.io/development/2018/12/06/using-nightwatch-for-screenshots.html"},"url":"https://huzooka.github.io/development/2018/12/06/using-nightwatch-for-screenshots.html"}</script>
+
+<link rel="stylesheet" href="/assets/main.css?f3f2fc8c">
+<link type="application/atom+xml" rel="alternate" href="https://huzooka.github.io/feed.xml" title="HuZooka">
+<link rel="icon" href="/favicon.ico?b6c405af" type="image/vnd.microsoft.icon">
+    <link rel="preload" href="/assets/texb-875-125.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+    <link rel="preload" href="/assets/charissilr.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+    <link rel="preload" href="/assets/charissilb.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+</head>
+<body>
+<header class="site-header">
+
+    <div class="wrapper">
+<a class="site-title h3" rel="author" href="/">
+            <span class="logo logo--header"></span>HuZooka
+        </a><nav class="site-nav">
+            <input type="checkbox" id="nav-trigger" class="nav-trigger">
+            <label for="nav-trigger" class="menu-icon">
+                <span class="menu-icon__bar"></span>
+                <span class="menu-icon__bar"></span>
+                <span class="menu-icon__bar"></span>
+            </label>
+
+            <div class="trigger">
+<a class="nav-link h5" href="/about/">About</a><a class="nav-link h5" href="https://huzooka.github.io/tag/drupal">Drupal</a><a class="nav-link h5" href="https://huzooka.github.io/tag/migration">Migration</a>
+</div>
+        </nav>
+</div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+    <header class="post-header">
+        <h1 class="post-title p-name" itemprop="name headline">How We Use Nightwatch.js for Developing Claro Theme</h1>
+
+        <p class="postmeta">
+            <time class="dt-published" datetime="2018-12-06T20:18:55+00:00" itemprop="datePublished">December 6, 2018
+            </time>• <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span class="p-author h-card" itemprop="name">Zoltán Horváth</span></span></p>
+    </header>
+
+    <div class="post-content e-content rhythm-onehalf" itemprop="articleBody">
+        <p class="lead">At the very beginning of <a href="https://www.drupal.org/project/claro" target="_blank" rel="noopener noreferrer">Claro</a> theme’s development <a href="https://www.drupal.org/u/lauriii" target="_blank" rel="noopener noreferrer">Lauri Eskola</a> (front end framework manager of Drupal) declared that the theme has to support Chrome, Firefox, Internet Explorer 11, Edge and Safari. The theme has to work properly with these browsers on their most common operating systems. He also wanted me to create screenshots about the actual component to prove that it looks as designed on every target platform.</p>
+
+<h2 id="the-problem">The problem</h2>
+
+<p>Fortunately, we already realized at the beginning of the development that the most expedient working method is to write dummy modules that display the components we are about to create. These dummy modules make the development a lot easier. After I thought I finished the task, it was time to create the screenshots.</p>
+
+<p>For the first task, I tried to take these screenshots by hand. This proved to be a very big challenge: it wasn’t just about repeating the scenario on five different systems, in five different browsers (11 variations overall), but it was really easy to make a mistake. In addition, there were several cases where the appropriate input element state (<code class="language-plaintext highlighter-rouge">:hover</code> + <code class="language-plaintext highlighter-rouge">focus</code>) was only capturable with serious tricks<sup id="fnref:1" role="doc-noteref"><a href="#fn:1" class="footnote" rel="footnote">1</a></sup>.</p>
+
+<div class="table-wrapper"><table>
+  <thead>
+    <tr>
+      <th> </th>
+      <th style="text-align: center">Ubuntu</th>
+      <th style="text-align: center">macOS</th>
+      <th style="text-align: center">Win.</th>
+      <th style="text-align: center">Android</th>
+      <th style="text-align: center">iOS 12</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Chrome</td>
+      <td style="text-align: center">⬤</td>
+      <td style="text-align: center">⬤</td>
+      <td style="text-align: center">⬤</td>
+      <td style="text-align: center">⬤</td>
+      <td style="text-align: center"> </td>
+    </tr>
+    <tr>
+      <td>Firefox</td>
+      <td style="text-align: center">⬤</td>
+      <td style="text-align: center">⬤</td>
+      <td style="text-align: center">⬤</td>
+      <td style="text-align: center"> </td>
+      <td style="text-align: center"> </td>
+    </tr>
+    <tr>
+      <td>Safari</td>
+      <td style="text-align: center"> </td>
+      <td style="text-align: center">⬤</td>
+      <td style="text-align: center"> </td>
+      <td style="text-align: center"> </td>
+      <td style="text-align: center">⬤</td>
+    </tr>
+    <tr>
+      <td>IE 11</td>
+      <td style="text-align: center"> </td>
+      <td style="text-align: center"> </td>
+      <td style="text-align: center">⬤</td>
+      <td style="text-align: center"> </td>
+      <td style="text-align: center"> </td>
+    </tr>
+    <tr>
+      <td>Edge</td>
+      <td style="text-align: center"> </td>
+      <td style="text-align: center"> </td>
+      <td style="text-align: center">⬤</td>
+      <td style="text-align: center"> </td>
+      <td style="text-align: center"> </td>
+    </tr>
+  </tbody>
+</table></div>
+
+<p>Once I spent 4–6 hours on taking and combining screenshots, it became evident that we have to find a solution to automate the process (at least partially).</p>
+
+<h2 id="the-idea">The idea</h2>
+
+<p>Since we have all the fundamentals in the picture of the dummy modules, we only need a tool being able to perform the same runbook on the browser instances we need:</p>
+<ol>
+  <li>We need a Drupal 8 instance that has the actual dummy module being installed.</li>
+  <li>Then this Drupal instance gets tested in a real browser by a tool…</li>
+  <li>…Which tool is able to create screenshots (let’s be precise: browser viewport shots).</li>
+</ol>
+
+<p><a href="https://www.drupal.org/project/drupal/issues/2869825" target="_blank" rel="noopener noreferrer">Nightwatch.js was added to Drupal core</a> this summer, let’s check it out!</p>
+
+<h2 id="what-is-nightwatchjs">What is Nightwatch.js?</h2>
+
+<p><a href="https://nightwatchjs.org/" target="_blank" rel="noopener noreferrer">Nightwatch.js</a> is an E2E testing framework made for testing websites and web applications on “real” browsers.</p>
+
+<p>I read that<a href="https://www.lullabot.com/articles/nightwatch-in-drupal-core" target="_blank" rel="noopener noreferrer"> Drupal people are talking about it</a>, it is using <a href="https://www.w3.org/TR/webdriver/" target="_blank" rel="noopener noreferrer">W3C WebDriver API</a> to interact with browsers. And I also see that <a href="https://nightwatchjs.org/api/saveScreenshot.html" target="_blank" rel="noopener noreferrer">I can ask it to take a screenshot</a>. I played with it a bit and made sure it could work not only with WebDriver middlewares (like <code class="language-plaintext highlighter-rouge">chromedriver</code> or <code class="language-plaintext highlighter-rouge">geckodriver</code>) but also Selenium server.</p>
+
+<p>So our hard requirements above are met!</p>
+
+<h2 id="the-code">The code</h2>
+
+<h3 id="test-as-a-screenshot-script">Test as a screenshot script</h3>
+
+<p>Basically, I’m writing Nightwatch.js tests which are testing the UI that the demo modules provide. The first few tasks are about form elements (HTML inputs), where it is particularly important to check the appearance of element states.</p>
+
+<p>What happens if I check a checkbox with the keyboard? What does the element look like when it is in focus and also the pointer is over it? And what if this element also has an error warning, and its border color is different?</p>
+
+<p>Well, after a couple of tries, I think I can <a href="https://github.com/zolhorvath/seven-refresh/blob/master/tests/Nightwatch/Tests/checkboxRadioScreenshots.js#L24-L38" target="_blank" rel="noopener noreferrer">write a script as a JS test</a> like a pro now!</p>
+
+<h3 id="taking-screenshots">Taking screenshots</h3>
+
+<p>Another challenging task is to create full page screenshots. I wasn’t able (because it is impossible<sup id="fnref:2" role="doc-noteref"><a href="#fn:2" class="footnote" rel="footnote">2</a></sup>) to resize the browser window on each system to be able to capture the whole webpage we are interacting with. So I had to write a custom script, <a href="https://github.com/zolhorvath/seven-refresh/blob/master/tests/Nightwatch/Commands/savefullScreenShot.js#L1" target="_blank" rel="noopener noreferrer">a Nightwatch.js command</a>, which scrolls to the top of the page, saves the visible viewport to a file, then it scrolls downwards, takes another screenshot, and repeats these steps until it reaches the bottom of the page.</p>
+
+<p>The merged version of the screenshot pieces can be created with a <a href="https://github.com/zolhorvath/seven-refresh/blob/master/tests/Nightwatch/Commands/savefullScreenShot.js#L5" target="_blank" rel="noopener noreferrer">cli JS script</a> which is using <a href="https://www.npmjs.com/package/jimp" target="_blank" rel="noopener noreferrer">Jimp</a></p>
+
+<p>And this is an example image that shows the textarea and editor error style updates:</p>
+
+<p class="figure"><a href="https://user-images.githubusercontent.com/9197058/49235339-31f03700-f3fa-11e8-9153-27e889a2d533.png" class="image-linker"><img src="https://user-images.githubusercontent.com/9197058/49235339-31f03700-f3fa-11e8-9153-27e889a2d533.png" alt="'Textarea and editor error styles. Seven theme on the left-hand side, Claro on the right'" loading="lazy"></a>
+Textarea and editor error styles. Seven theme on the left-hand side, Claro on the right.</p>
+
+<h2 id="the-infrastructure">The infrastructure</h2>
+
+<p>I spent most of my time assembling the infrastructure. The final solution — the tool for launching browsers, and managing communication between the Nightwatch.js tests and the browsers — eventually became a Selenium grid.</p>
+
+<p>The first challenge was to identify the latest version of Selenium that the ancient version of Nightwatch.js used in Drupal can properly communicate with. Well, it wasn’t the latest Selenium release!</p>
+
+<p>I’ve set up a Selenium grid, which consists of a central communication server (this is called hub), and an unlimited number of “sub” servers (nodes). The hub acts as a router between the Nightwatch.js tests and the nodes; and the node is responsible for starting and controlling the actual web browser instances, and performing the interactive actions we ask for in the tests.</p>
+
+<p>I have four Selenium nodes:</p>
+<ul>
+  <li>The first one I configured is the node I’m using for controlling the browsers on my macOS localhost: Safari, Firefox, and Google Chrome.</li>
+  <li>I have another node running in a Ubuntu virtual machine with Firefox and Google Chrome.</li>
+  <li>I have yet-another two Selenium nodes, one in a Windows 8.1 VM, and another one in a Windows 10 VM; with Google Chrome, Firefox, Internet Explorer 11 and Microsoft Edge.</li>
+  <li>And for being able to test on mobile devices, I also have an Appium server which controls an emulated Android device with Chrome for Android, and an iOS device with Safari.</li>
+</ul>
+
+<h2 id="local-selenium-node-setup">Local Selenium node setup</h2>
+
+<p>Since I am on macOs, Safari browser was already available. I only needed an installed <a href="https://www.oracle.com/technetwork/java/javase/downloads/index.html" target="_blank" rel="noopener noreferrer">Java SE</a>, <a href="https://www.google.com/chrome" target="_blank" rel="noopener noreferrer">Google Chrome</a>, <a href="https://www.mozilla.org/firefox/" target="_blank" rel="noopener noreferrer">Firefox</a> and Safari Webdriver (latter should be enabled, <a href="https://developer.apple.com/documentation/webkit/testing_with_webdriver_in_safari" target="_blank" rel="noopener noreferrer">instructions are here</a>).</p>
+
+<p>And besides these, I also had to get:</p>
+
+<ul>
+  <li>The standalone <a href="https://selenium-release.storage.googleapis.com/index.html?path=3.4/" target="_blank" rel="noopener noreferrer">Selenium 3.4.0 server</a><sup id="fnref:3" role="doc-noteref"><a href="#fn:3" class="footnote" rel="footnote">3</a></sup>
+</li>
+  <li>
+<a href="http://chromedriver.chromium.org/downloads" target="_blank" rel="noopener noreferrer">ChromeDriver</a> that matches the installed Google Chrome version.</li>
+  <li>And for controlling Firefox, the <a href="https://github.com/mozilla/geckodriver/releases" target="_blank" rel="noopener noreferrer">latest geckodriver</a>.</li>
+</ul>
+
+<p>To simplify the maintenance, I always rename the downloaded and extracted Selenium server and the webdriver executables to a name that includes their version number and place them into the same folder.</p>
+
+<h3 id="configuration-and-dx">Configuration and DX</h3>
+
+<h4 id="selenium-hub">Selenium hub</h4>
+
+<p>I wrote a shell script <code class="language-plaintext highlighter-rouge">hub-up.sh</code> to start the Selenium hub (because this way I don’t have to remember the parameters):</p>
+
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr>
+<td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+</pre></td>
+<td class="rouge-code"><pre><span class="c">#!/bin/bash</span>
+<span class="nv">HOST</span><span class="o">=</span><span class="k">${</span><span class="nv">1</span><span class="k">:-</span><span class="s2">"</span><span class="si">$(</span>ipconfig getifaddr en0<span class="si">)</span><span class="s2">"</span><span class="k">}</span>
+java <span class="se">\</span>
+  <span class="nt">-jar</span> <span class="s2">"</span><span class="k">${</span><span class="nv">HOME</span><span class="k">}</span><span class="s2">/selenium/selenium-server-standalone-3.4.0.jar"</span> <span class="se">\</span>
+  <span class="nt">-port</span> 4444 <span class="se">\</span>
+  <span class="nt">-role</span> hub <span class="se">\</span>
+  <span class="nt">-host</span> <span class="s2">"</span><span class="k">${</span><span class="nv">HOST</span><span class="k">}</span><span class="s2">"</span>
+</pre></td>
+</tr></tbody></table></code></pre></div></div>
+
+<h4 id="selenium-node">Selenium node</h4>
+
+<p>For the local Selenium node instance, we have to provide the paths to the webdriver executables, the endpoint of the Selenium hub and also define our node’s capabilities in a JSON config file, e.g. <code class="language-plaintext highlighter-rouge">selenium-node-config--3.4.0--osx.json</code>:</p>
+
+<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr>
+<td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+28
+29
+30
+31
+32
+33
+34
+</pre></td>
+<td class="rouge-code"><pre><span class="p">{</span><span class="w">
+  </span><span class="nl">"capabilities"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
+    </span><span class="p">{</span><span class="w">
+      </span><span class="nl">"browserName"</span><span class="p">:</span><span class="w"> </span><span class="s2">"firefox"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"maxInstances"</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"seleniumProtocol"</span><span class="p">:</span><span class="w"> </span><span class="s2">"WebDriver"</span><span class="w">
+    </span><span class="p">},</span><span class="w">
+    </span><span class="p">{</span><span class="w">
+      </span><span class="nl">"browserName"</span><span class="p">:</span><span class="w"> </span><span class="s2">"chrome"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"maxInstances"</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"seleniumProtocol"</span><span class="p">:</span><span class="w"> </span><span class="s2">"WebDriver"</span><span class="w">
+    </span><span class="p">},</span><span class="w">
+    </span><span class="p">{</span><span class="w">
+      </span><span class="nl">"browserName"</span><span class="p">:</span><span class="w"> </span><span class="s2">"safari"</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"maxInstances"</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span><span class="w">
+      </span><span class="nl">"seleniumProtocol"</span><span class="p">:</span><span class="w"> </span><span class="s2">"WebDriver"</span><span class="w">
+    </span><span class="p">}</span><span class="w">
+  </span><span class="p">],</span><span class="w">
+  </span><span class="nl">"proxy"</span><span class="p">:</span><span class="w"> </span><span class="s2">"org.openqa.grid.selenium.proxy.DefaultRemoteProxy"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"maxSession"</span><span class="p">:</span><span class="w"> </span><span class="mi">5</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"port"</span><span class="p">:</span><span class="w"> </span><span class="mi">5501</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"register"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"registerCycle"</span><span class="p">:</span><span class="w"> </span><span class="mi">5000</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"hub"</span><span class="p">:</span><span class="w"> </span><span class="s2">"http://localhost:4444"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"nodeStatusCheckTimeout"</span><span class="p">:</span><span class="w"> </span><span class="mi">5000</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"nodePolling"</span><span class="p">:</span><span class="w"> </span><span class="mi">5000</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"role"</span><span class="p">:</span><span class="w"> </span><span class="s2">"node"</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"unregisterIfStillDownAfter"</span><span class="p">:</span><span class="w"> </span><span class="mi">60000</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"downPollingLimit"</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"debug"</span><span class="p">:</span><span class="w"> </span><span class="kc">false</span><span class="p">,</span><span class="w">
+  </span><span class="nl">"servlets"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">[],</span><span class="w">
+  </span><span class="nl">"withoutServlets"</span><span class="p">:</span><span class="w"> </span><span class="p">[],</span><span class="w">
+  </span><span class="nl">"custom"</span><span class="p">:</span><span class="w"> </span><span class="p">{}</span><span class="w">
+</span><span class="p">}</span><span class="w">
+</span></pre></td>
+</tr></tbody></table></code></pre></div></div>
+
+<p>The Selenium node can be started with the following script:</p>
+
+<div class="language-shell highlighter-rouge"><div class="highlight"><pre class="highlight"><code><table class="rouge-table"><tbody><tr>
+<td class="rouge-gutter gl"><pre class="lineno">1
+2
+3
+4
+5
+6
+7
+8
+9
+</pre></td>
+<td class="rouge-code"><pre><span class="c">#!/bin/bash</span>
+<span class="nv">HOST</span><span class="o">=</span><span class="k">${</span><span class="nv">1</span><span class="k">:-</span><span class="s2">"</span><span class="si">$(</span>ipconfig getifaddr en0<span class="si">)</span><span class="s2">"</span><span class="k">}</span>
+java <span class="se">\</span>
+  <span class="nt">-Dwebdriver</span>.gecko.driver<span class="o">=</span><span class="s2">"</span><span class="k">${</span><span class="nv">HOME</span><span class="k">}</span><span class="s2">/selenium/geckodriver-0.22.0"</span> <span class="se">\</span>
+  <span class="nt">-Dwebdriver</span>.chrome.driver<span class="o">=</span><span class="s2">"</span><span class="k">${</span><span class="nv">HOME</span><span class="k">}</span><span class="s2">/selenium/chromedriver-chrome-75"</span> <span class="se">\</span>
+  <span class="nt">-jar</span> <span class="s2">"</span><span class="k">${</span><span class="nv">HOME</span><span class="k">}</span><span class="s2">/selenium/selenium-server-standalone-3.4.0.jar"</span> <span class="se">\</span>
+  <span class="nt">-role</span> node <span class="se">\</span>
+  <span class="nt">-hub</span> <span class="s2">"http://</span><span class="k">${</span><span class="nv">HOST</span><span class="k">}</span><span class="s2">:4444/grid/register"</span> <span class="se">\</span>
+  <span class="nt">-nodeConfig</span> <span class="s2">"</span><span class="k">${</span><span class="nv">HOME</span><span class="k">}</span><span class="s2">/selenium/selenium-node-config--3.4.0--osx.json"</span>
+</pre></td>
+</tr></tbody></table></code></pre></div></div>
+
+<p>I hope you enjoyed reading and found this post useful. I’ll be coming up soon with a recipe for nodes running on virtual machines.</p>
+
+<hr>
+
+<p><em>Sources</em>:</p>
+
+<ul>
+  <li>
+<a href="https://www.codementor.io/olawalealadeusi896/setting-up-selenium-grid-to-run-your-tests-in-parallel-on-multiple-browsers-kl6vqi83a" target="_blank" rel="noopener noreferrer">Setting up Selenium Grid to run your tests in parallel on multiple browsers</a> by Olawale Aladeusi</li>
+  <li>
+<a href="https://gist.github.com/JAffleck/305af03d147d9438899e82bb9711d65a" target="_blank" rel="noopener noreferrer">Running Webdriver tests in VirtualBox VM in Microsoft Edge in Selenium Grid 3</a> gist from James Affleck</li>
+  <li>
+<a href="https://github.com/SeleniumHQ/selenium/wiki/Grid2" target="_blank" rel="noopener noreferrer">Grid2</a> wiki page on <a href="https://github.com/SeleniumHQ/selenium" target="_blank" rel="noopener noreferrer">SeleniumHQ/selenium</a> about Selenium 2(!) grid</li>
+</ul>
+
+<hr>
+
+<p><em>Footnotes</em>:</p>
+
+<div class="footnotes">
+  <ol>
+    <li id="fn:1" role="doc-footnote">
+      <p>For example because the key combination for taking a screenshot stole the focus from that item. <a href="#fnref:1" class="reversefootnote" role="doc-backlink">↩</a></p>
+    </li>
+    <li id="fn:2" role="doc-footnote">
+      <p>Nothing happens if you try to resize the browser window of Internet Explorer, headless Firefox (on any system), or on mobile devices (latter is obvious at least) <a href="#fnref:2" class="reversefootnote" role="doc-backlink">↩</a></p>
+    </li>
+    <li id="fn:3" role="doc-footnote">
+      <p>Selenium 3.4.0 is the highest version which is compatible with the <a href="https://git.drupalcode.org/project/drupal/-/blob/8.6.x/core/yarn.lock#L3145" target="_blank" rel="noopener noreferrer">ancient Nightwatch.js version</a>) used by Drupal core. <a href="#fnref:3" class="reversefootnote" role="doc-backlink">↩</a></p>
+    </li>
+  </ol>
+</div>
+
+    </div>
+<div class="tags rhythm-onehalf">
+        <strong>Tagged with:</strong>
+        
+        <a class="postmeta__item postmeta__item--tag label" href="https://huzooka.github.io/tag/drupal">Drupal</a>
+        
+        <a class="postmeta__item postmeta__item--tag label" href="https://huzooka.github.io/tag/nightwatch-js">Nightwatch.js</a>
+        
+        <a class="postmeta__item postmeta__item--tag label" href="https://huzooka.github.io/tag/selenium">Selenium</a>
+        
+        <a class="postmeta__item postmeta__item--tag label" href="https://huzooka.github.io/tag/testing">Testing</a>
+        
+    </div>
+<a class="u-url" href="/development/2018/12/06/using-nightwatch-for-screenshots.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="footer h-card bg-dark">
+    <data class="u-url" href="/"></data>
+
+    <div class="wrapper">
+        <div class="footer__row">
+            <div class="footer__col footer__col--slogan">
+                <div class="slogan">
+                    <span class="logo slogan__logo"></span>
+                    <p class="slogan__slogan">The Github Page where I temporarily publish my professional posts</p>
+                </div>
+            </div>
+
+            <div class="footer__col">
+<ul class="menu-list font-heading">
+<li class="menu-list__item h4">
+        <a href="/about/">About</a>
+    </li>
+<li class="menu-list__item h4">
+        <a href="https://huzooka.github.io/tag/drupal">Drupal</a>
+    </li>
+<li class="menu-list__item h4">
+        <a href="https://huzooka.github.io/tag/migration">Migration</a>
+    </li>
+<li class="menu-list__item h4">
+        <a href="/feed.xml">RSS</a>
+    </li>
+</ul>
+</div>
+
+            <div class="footer__col">
+<ul class="menu-list font-heading">
+<li class="menu-list__item h4"><a href="https://drupal.org/u/huzooka" target="_blank" rel="noopener noreferrer">Drupal.org</a></li>
+<li class="menu-list__item h4"><a href="https://github.com/zolhorvath" target="_blank" rel="noopener noreferrer">Github</a></li>
+<li class="menu-list__item h4"><a href="https://www.linkedin.com/in/zoltan-attila-horvath" target="_blank" rel="noopener noreferrer">Linkedin</a></li>
+<li class="menu-list__item h4"><a href="https://www.twitter.com/huzooka" target="_blank" rel="noopener noreferrer">Twitter</a></li>
+</ul>
+</div>
+        </div>
+    </div>
+</footer>
+</body>
+
+</html>

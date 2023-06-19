@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Issues with core multilingual migrations | HuZooka</title>
+<meta name="generator" content="Jekyll v4.2.2">
+<meta property="og:title" content="Issues with core multilingual migrations">
+<meta name="author" content="Zoltán Horváth">
+<meta property="og:locale" content="en_US">
+<meta name="description" content="The bugs I ran into while vetting Drupal core’s multilingual migrations.">
+<meta property="og:description" content="The bugs I ran into while vetting Drupal core’s multilingual migrations.">
+<link rel="canonical" href="https://huzooka.github.io/development/2021/01/31/core-multilingual-migration.html">
+<meta property="og:url" content="https://huzooka.github.io/development/2021/01/31/core-multilingual-migration.html">
+<meta property="og:site_name" content="HuZooka">
+<meta property="og:image" content="https://huzooka.github.io/simple.png">
+<meta property="og:type" content="article">
+<meta property="article:published_time" content="2021-01-31T15:16:47+00:00">
+<meta name="twitter:card" content="summary_large_image">
+<meta property="twitter:image" content="https://huzooka.github.io/simple.png">
+<meta property="twitter:title" content="Issues with core multilingual migrations">
+<meta name="twitter:site" content="@huzooka">
+<meta name="twitter:creator" content="@huzooka">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"BlogPosting","author":{"@type":"Person","name":"Zoltán Horváth"},"dateModified":"2021-01-31T15:16:47+00:00","datePublished":"2021-01-31T15:16:47+00:00","description":"The bugs I ran into while vetting Drupal core’s multilingual migrations.","headline":"Issues with core multilingual migrations","image":"https://huzooka.github.io/simple.png","mainEntityOfPage":{"@type":"WebPage","@id":"https://huzooka.github.io/development/2021/01/31/core-multilingual-migration.html"},"url":"https://huzooka.github.io/development/2021/01/31/core-multilingual-migration.html"}</script>
+
+<link rel="stylesheet" href="/assets/main.css?f3f2fc8c">
+<link type="application/atom+xml" rel="alternate" href="https://huzooka.github.io/feed.xml" title="HuZooka">
+<link rel="icon" href="/favicon.ico?b6c405af" type="image/vnd.microsoft.icon">
+    <link rel="preload" href="/assets/texb-875-125.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+    <link rel="preload" href="/assets/charissilr.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+    <link rel="preload" href="/assets/charissilb.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+</head>
+<body>
+<header class="site-header">
+
+    <div class="wrapper">
+<a class="site-title h3" rel="author" href="/">
+            <span class="logo logo--header"></span>HuZooka
+        </a><nav class="site-nav">
+            <input type="checkbox" id="nav-trigger" class="nav-trigger">
+            <label for="nav-trigger" class="menu-icon">
+                <span class="menu-icon__bar"></span>
+                <span class="menu-icon__bar"></span>
+                <span class="menu-icon__bar"></span>
+            </label>
+
+            <div class="trigger">
+<a class="nav-link h5" href="/about/">About</a><a class="nav-link h5" href="https://huzooka.github.io/tag/drupal">Drupal</a><a class="nav-link h5" href="https://huzooka.github.io/tag/migration">Migration</a>
+</div>
+        </nav>
+</div>
+</header>
+<main class="page-content" aria-label="Content">
+      <div class="wrapper">
+        <article class="post h-entry" itemscope itemtype="http://schema.org/BlogPosting">
+
+    <header class="post-header">
+        <h1 class="post-title p-name" itemprop="name headline">Issues with core multilingual migrations</h1>
+
+        <p class="postmeta">
+            <time class="dt-published" datetime="2021-01-31T15:16:47+00:00" itemprop="datePublished">January 31, 2021
+            </time>• <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span class="p-author h-card" itemprop="name">Zoltán Horváth</span></span></p>
+    </header>
+
+    <div class="post-content e-content rhythm-onehalf" itemprop="articleBody">
+        <p class="lead">I started vetting core multilingual migrations for Acquia Migrate Accelerate last December, and I’ve found a couple of issues which I tried to fix or worked around.</p>
+
+<ol>
+  <li>
+    <p><a href="https://drupal.org/i/3095922" target="_blank" rel="noopener noreferrer"><strong>#3095922</strong></a> The comment <code class="language-plaintext highlighter-rouge">language</code> column in D7 might be empty after migrating from D6, this is invalid in D8</p>
+  </li>
+  <li>
+    <p><a href="https://drupal.org/i/3155300" target="_blank" rel="noopener noreferrer"><strong>#3155300</strong></a> <code class="language-plaintext highlighter-rouge">d7_language_types</code> migration runs when not appropriate</p>
+  </li>
+  <li>
+    <p><a href="https://drupal.org/i/3187426" target="_blank" rel="noopener noreferrer"><strong>#3187426</strong></a> Ignored <code class="language-plaintext highlighter-rouge">parent::prepareRow()</code> return value in TermTranslation and in TermLocalizedTranslation,</p>
+
+    <p><em>Later this was closed as duplicate of</em> <a href="https://drupal.org/i/3187433" target="_blank" rel="noopener noreferrer"><strong>#3187433</strong></a> Eliminate <code class="language-plaintext highlighter-rouge">parent::prepareRow()</code> calls with ignored return value from all migrate source plugins</p>
+  </li>
+  <li>
+    <p><a href="https://drupal.org/i/3186449" target="_blank" rel="noopener noreferrer"><strong>#3186449</strong></a> ContentEntity source plugin shouldn’t throw exception when the bundle key is missing</p>
+  </li>
+  <li>
+    <p><a href="https://drupal.org/i/3187474" target="_blank" rel="noopener noreferrer"><strong>#3187474</strong></a> Improve source record count of translation migrate source plugins which use the <code class="language-plaintext highlighter-rouge">i18n_string</code> table</p>
+  </li>
+  <li>
+    <p><a href="https://drupal.org/i/3318747" target="_blank" rel="noopener noreferrer"><strong>#3318747</strong></a> Remove unused “I18nQueryTrait” from “TermTranslation” migrate source plugin</p>
+  </li>
+  <li>
+    <p><a href="https://drupal.org/i/3187616" target="_blank" rel="noopener noreferrer"><strong>#3187616</strong></a> Fix TermTranslation query and add missing source plugin test</p>
+  </li>
+  <li>
+    <p><a href="https://drupal.org/i/3143676" target="_blank" rel="noopener noreferrer"><strong>#3143676</strong></a> Missing condition in d7_term_localized_translation source plugin causing invalid migration</p>
+  </li>
+  <li>
+    <p><a href="https://drupal.org/i/3188455" target="_blank" rel="noopener noreferrer"><strong>#3188455</strong></a> Shouldn’t MigrateSkipRowException extend MigrateException?</p>
+  </li>
+  <li>
+    <p><a href="https://drupal.org/i/3189463" target="_blank" rel="noopener noreferrer"><strong>#3189463</strong></a> All translation/localization migrations should depend on the <code class="language-plaintext highlighter-rouge">language</code> migration</p>
+  </li>
+  <li>
+    <p><a href="https://drupal.org/i/3196873" target="_blank" rel="noopener noreferrer"><strong>#3196873</strong></a> Migrations with config or content entity destination should depend on <code class="language-plaintext highlighter-rouge">default_language</code></p>
+  </li>
+  <li>
+    <p><a href="https://drupal.org/i/3178966" target="_blank" rel="noopener noreferrer"><strong>#3178966</strong></a> Fatal error in CommentEntityTranslation @MigrationSource when source site does not have comment or node module installed</p>
+  </li>
+  <li>
+    <p><a href="https://drupal.org/i/3187263" target="_blank" rel="noopener noreferrer"><strong>#3187263</strong></a> Block configuration translation migrations should be defined in <code class="language-plaintext highlighter-rouge">config_translation</code>, not in <code class="language-plaintext highlighter-rouge">content_translation</code></p>
+  </li>
+  <li>
+    <p><a href="https://drupal.org/i/3187318" target="_blank" rel="noopener noreferrer"><strong>#3187318</strong></a> ContentEntity source plugin should exclude user with uid <code class="language-plaintext highlighter-rouge">0</code></p>
+  </li>
+  <li>
+    <p><a href="https://drupal.org/i/3187320" target="_blank" rel="noopener noreferrer"><strong>#3187320</strong></a> Migrate Drupal 7 user settings</p>
+  </li>
+  <li>
+    <p><a href="https://drupal.org/i/3187415" target="_blank" rel="noopener noreferrer"><strong>#3187415</strong></a> Module settings translation migrations should depend on the default settings migration</p>
+  </li>
+  <li>
+    <p><a href="https://drupal.org/i/3187418" target="_blank" rel="noopener noreferrer"><strong>#3187418</strong></a> System site translation shouldn’t migrate properties which are not translatable</p>
+  </li>
+</ol>
+
+    </div>
+<div class="tags rhythm-onehalf">
+        <strong>Tagged with:</strong>
+        
+        <a class="postmeta__item postmeta__item--tag label" href="https://huzooka.github.io/tag/drupal-core">Drupal core</a>
+        
+        <a class="postmeta__item postmeta__item--tag label" href="https://huzooka.github.io/tag/migration">Migration</a>
+        
+    </div>
+<a class="u-url" href="/development/2021/01/31/core-multilingual-migration.html" hidden></a>
+</article>
+
+      </div>
+    </main><footer class="footer h-card bg-dark">
+    <data class="u-url" href="/"></data>
+
+    <div class="wrapper">
+        <div class="footer__row">
+            <div class="footer__col footer__col--slogan">
+                <div class="slogan">
+                    <span class="logo slogan__logo"></span>
+                    <p class="slogan__slogan">The Github Page where I temporarily publish my professional posts</p>
+                </div>
+            </div>
+
+            <div class="footer__col">
+<ul class="menu-list font-heading">
+<li class="menu-list__item h4">
+        <a href="/about/">About</a>
+    </li>
+<li class="menu-list__item h4">
+        <a href="https://huzooka.github.io/tag/drupal">Drupal</a>
+    </li>
+<li class="menu-list__item h4">
+        <a href="https://huzooka.github.io/tag/migration">Migration</a>
+    </li>
+<li class="menu-list__item h4">
+        <a href="/feed.xml">RSS</a>
+    </li>
+</ul>
+</div>
+
+            <div class="footer__col">
+<ul class="menu-list font-heading">
+<li class="menu-list__item h4"><a href="https://drupal.org/u/huzooka" target="_blank" rel="noopener noreferrer">Drupal.org</a></li>
+<li class="menu-list__item h4"><a href="https://github.com/zolhorvath" target="_blank" rel="noopener noreferrer">Github</a></li>
+<li class="menu-list__item h4"><a href="https://www.linkedin.com/in/zoltan-attila-horvath" target="_blank" rel="noopener noreferrer">Linkedin</a></li>
+<li class="menu-list__item h4"><a href="https://www.twitter.com/huzooka" target="_blank" rel="noopener noreferrer">Twitter</a></li>
+</ul>
+</div>
+        </div>
+    </div>
+</footer>
+</body>
+
+</html>
